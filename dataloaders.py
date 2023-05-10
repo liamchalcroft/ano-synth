@@ -54,22 +54,32 @@ class CustomQueue(tio.Queue):
         sample_patch = self.patches_list.pop()
         # return {'data': sample_patch['data'][tio.DATA][...,0]}
         return DatasetOutput(data=sample_patch['data'][tio.DATA][...,0])
-
+  
 
 class SliceDataset(Dataset):
-    def __init__(self, files, transform=None):
-        self.files = files
-        self.transform = transform
+    def __init__(self, tiodata):
+        self.tiodata = tiodata
+        self.cur_data = None
+        self.cur_ix = None
+        self.idx_freeze = 0
 
     def __len__(self):
-        return len(self.files)
+        return len(self.tiodata)
 
-    def __getitem__(self, idx):
-        img_path = self.files[idx]
-        data = self.transform(img_path)
-        # data = interpolate(data[None], size=(128,128))[0]
-        # return DatasetOutput(data=data)
-        return data
+    def __getitem__(self, idx): # completely ignore given idx and instead iterate internally
+        if self.cur_ix is None or self.cur_ix >= int(self.cur_data.shape[-1]):
+            if self.idx_freeze >= self.__len__():
+                self.idx_freeze = 0
+            img_path = self.tiodata.__getitem__(self.idx_freeze)
+            self.idx_freeze += 1
+            data = self.transform(img_path)
+            self.cur_data = data
+            self.cur_ix = 0
+   
+        data = self.cur_data['data'][tio.DATA][...,self.cur_ix]
+        self.cur_ix += 1
+        
+        return DatasetOutput(data=data)
 
 
 def get_mri_data(device):
