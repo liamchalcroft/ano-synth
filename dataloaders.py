@@ -113,8 +113,8 @@ def get_synth_data(device):
         tio.RescaleIntensity(out_min_max=(0,1), percentiles=(0.5,99.5)),
     ])
 
-    subj_train = [tio.Subject(data=tio.ScalarImage(img)) for img in img_list_train]
-    subj_val = [tio.Subject(data=tio.ScalarImage(img)) for img in img_list_val]
+    subj_train = [tio.Subject(label=tio.ScalarImage(img)) for img in img_list_train]
+    subj_val = [tio.Subject(label=tio.ScalarImage(img)) for img in img_list_val]
 
     data_train = tio.SubjectsDataset(subj_train, transform=transforms)
     data_val = tio.SubjectsDataset(subj_val, transform=transforms)
