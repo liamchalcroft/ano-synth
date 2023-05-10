@@ -93,8 +93,8 @@ def get_mri_data(device):
 
     patch_sampler = tio.UniformSampler(patch_size=(128,128,1))
 
-    data_train = CustomQueue(data_train, max_length=2048, samples_per_volume=128, sampler=patch_sampler, num_workers=8)
-    data_val = CustomQueue(data_val, max_length=2048, samples_per_volume=128, sampler=patch_sampler, num_workers=8)
+    data_train = CustomQueue(data_train, max_length=2048, samples_per_volume=128, sampler=patch_sampler, num_workers=len(os.sched_getaffinity(0)))
+    data_val = CustomQueue(data_val, max_length=2048, samples_per_volume=128, sampler=patch_sampler, num_workers=len(os.sched_getaffinity(0)))
 
     return data_train, data_val
 
