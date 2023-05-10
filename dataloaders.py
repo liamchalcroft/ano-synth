@@ -8,8 +8,8 @@ import cornucopia as cc
 import numpy as np
 import os, glob
 
-img_list = glob.glob('/home/lchalcroft/Data/OASIS/liam*/*/*/DATA/*/mri/orig.nii.gz')
-mb_list = glob.glob('/home/lchalcroft/Data/OASIS/liam*/*/*/DATA/*/mri/mb_labels.nii.gz')
+img_list = glob.glob('oasis/*/aligned_norm.nii.gz')
+mb_list = glob.glob('oasis/*/aligned_seg35.nii.gz')
 
 img_list_train, img_list_val = img_list[:int(0.8*len(img_list))], img_list[int(0.8*len(img_list)):]
 mb_list_train, mb_list_val = mb_list[:int(0.8*len(mb_list))], mb_list[int(0.8*len(mb_list)):]
@@ -97,32 +97,6 @@ def get_mri_data(device):
     data_val = CustomQueue(data_val, max_length=2048, samples_per_volume=128, sampler=patch_sampler, num_workers=8)
 
     return data_train, data_val
-
-
-# def get_mri_data(device):
-#     transforms = mn.transforms.Compose(transforms=[
-#         mn.transforms.LoadImage(image_only=True),
-#         mn.transforms.EnsureChannelFirst(),
-#         mn.transforms.CropForeground(),
-#         mn.transforms.Resize(spatial_size=(128,128,128)),
-#         mn.transforms.ToTensor(dtype='float32', device=device),
-#         cc.FlipTransform(),
-#         cc.FlipTransform(),
-#         cc.FlipTransform(),
-#         cc.RandomAffineElasticTransform(dmax=0.15, shape=10, steps=0,
-#             translations=0.1, rotations=15, shears=0.012, zooms=0.15,
-#             unit='fov', bound='border', shared=True),
-#         # mn.transforms.RandSpatialCrop((128,128,1), random_size=False),
-#         cc.QuantileTransform(pmin=0.01, pmax=0.99, vmin=0, vmax=1, clamp=True, shared=False)
-#     ])
-
-#     data_train = SliceDataset(img_list_train, transform=transforms)
-#     data_val = SliceDataset(img_list_val, transform=transforms)
-
-#     data_train = cmn.PatchDataset(data_train, mn.transforms.RandSpatialCropSamples((128,128,1), num_samples=8, random_size=False), samples_per_image=8)
-#     data_val = cmn.PatchDataset(data_val, mn.transforms.RandSpatialCropSamples((128,128,1), num_samples=8, random_size=False), samples_per_image=8)
-    
-#     return data_train, data_val
 
 
 def get_synth_data(device):
