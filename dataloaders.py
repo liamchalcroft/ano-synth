@@ -35,6 +35,7 @@ class CustomQueue(tio.Queue):
         self.shuffle_patches = shuffle_patches
         self.samples_per_volume = samples_per_volume
         self.sampler = sampler
+        self.subject_sampler = sampler
         self.num_workers = num_workers
         self.verbose = verbose
         self._subjects_iterable = None
