@@ -4,7 +4,6 @@ from pythae.data.datasets import DatasetOutput
 import custom_monai as cmn
 import torchio as tio
 import monai as mn
-import cornucopia as cc
 import numpy as np
 import os, glob
 
