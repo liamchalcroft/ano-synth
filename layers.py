@@ -6,10 +6,9 @@ from pythae.models.base.base_utils import ModelOutput
 class Encoder_Conv_VAE(BaseEncoder):
     def __init__(self, args):
         BaseEncoder.__init__(self)
-
         self.input_dim = args.input_dim
         self.latent_dim = args.latent_dim
-        self.n_channels = 1
+        self.n_channels = args.input_dim[0]
 
         self.conv_layers = nn.Sequential(
             nn.Conv2d(self.n_channels, 32, 5, 2, padding=2),
@@ -44,10 +43,9 @@ class Encoder_Conv_VAE(BaseEncoder):
 class Encoder_Conv_AE(BaseEncoder):
     def __init__(self, args):
         BaseEncoder.__init__(self)
-
         self.input_dim = args.input_dim
         self.latent_dim = args.latent_dim
-        self.n_channels = 1
+        self.n_channels = args.input_dim[0]
 
         self.conv_layers = nn.Sequential(
             nn.Conv2d(self.n_channels, 32, 5, 2, padding=2),
@@ -78,11 +76,11 @@ class Encoder_Conv_AE(BaseEncoder):
 
 
 class Decoder_Conv_AE(BaseDecoder):
-    def __init__(self, args, n_channels=1):
+    def __init__(self, args):
         BaseDecoder.__init__(self)
         self.input_dim = args.input_dim
         self.latent_dim = args.latent_dim
-        self.n_channels = n_channels
+        self.n_channels = args.input_dim[0]
             
 
         self.deconv_layers = nn.Sequential(
@@ -102,7 +100,7 @@ class Decoder_Conv_AE(BaseDecoder):
             nn.BatchNorm2d(32),
             nn.LeakyReLU(),
             nn.ConvTranspose2d(32, self.n_channels, 1, 1),
-            # nn.Sigmoid()
+            nn.Sigmoid()
         )
 
         self.fc = nn.Linear(args.latent_dim, 1024)
@@ -110,5 +108,50 @@ class Decoder_Conv_AE(BaseDecoder):
     def forward(self, z: torch.Tensor):
         h1 = self.fc(z).reshape(z.shape[0], 16, 8, 8)
         output = ModelOutput(reconstruction=self.deconv_layers(h1))
+
+        return output
+
+
+class Decoder_Conv_GaussVAE(BaseDecoder):
+    def __init__(self, args):
+        BaseDecoder.__init__(self)
+        self.input_dim = args.input_dim
+        self.latent_dim = args.latent_dim
+        self.n_channels = args.input_dim[0]
+            
+
+        self.deconv_layers = nn.Sequential(
+            nn.ConvTranspose2d(16, 128, 1, 1),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(128, 128, 5, 2, padding=2, output_padding=1),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(128, 64, 5, 2, padding=2, output_padding=1),
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(64, 32, 5, 2, padding=2, output_padding=1),
+            nn.BatchNorm2d(32),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(32, 32, 5, 2, padding=2, output_padding=1),
+            nn.BatchNorm2d(32),
+            nn.LeakyReLU(),
+        )
+
+        self.mu = nn.Sequential(
+            nn.ConvTranspose2d(32, self.n_channels, 1, 1),
+            nn.Sigmoid()
+        )
+        self.log_var = nn.ConvTranspose2d(32, self.n_channels, 1, 1)
+
+        self.fc = nn.Linear(args.latent_dim, 1024)
+
+    def forward(self, z: torch.Tensor):
+        hw = int((z.shape[-1] // 16) ** 0.5)
+        h1 = self.fc(z).reshape(z.shape[0], 16, hw, hw)
+        out = self.deconv_layers(h1)
+        mu = self.mu(out)
+        log_var = self.log_var(out)
+        output = ModelOutput(reconstruction=mu, mu=mu, log_var=log_var)
 
         return output
