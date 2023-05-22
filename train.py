@@ -46,7 +46,7 @@ my_training_config = BaseTrainerConfig(
 if args.model == 'VAE':
     from pythae.models import VAE, VAEConfig
     Encoder = layers.Encoder_Conv_VAE 
-    Decoder = layers.Decoder_Conv_AE 
+    Decoder = layers.Decoder_Conv_GaussVAE  if args.gauss else layers.Decoder_Conv_AE 
 
     my_vae_config = VAEConfig(
         input_dim=(1, 128, 128),
@@ -56,18 +56,19 @@ if args.model == 'VAE':
     class GaussVAE(VAE):
         def __init__(self, model_config, encoder, decoder):
             super().__init__(model_config, encoder, decoder)
-            # self.logvar_x = torch.nn.Parameter(torch.tensor(np.log(0.1)))
 
         def loss_function(self, recon_x, x, mu, log_var, z):
 
-            recon_loss = torch.nn.functional.mse_loss(
-                recon_x.reshape(x.shape[0], -1),
-                x.reshape(x.shape[0], -1),
-                reduction="none",
-            ).sum(dim=-1)
+            x_mu = recon_x["mu"].reshape(x.shape[0], -1)
+            x_log_var = recon_x["log_var"].reshape(x.shape[0], -1)
+            x = x.reshape(x.shape[0], -1)
 
-            # recon_loss = 0.5 * (torch.log(np.pi * 2 * self.logvar_x.exp()) + recon_loss / self.logvar_x.exp())
-            recon_loss = 0.5 * (torch.log(2 * np.pi * recon_loss) + 1)
+            x_log_var = torch.clamp(x_log_var,-10,1)
+            x_var = torch.exp(x_log_var)
+            squared_difference = torch.square(x - x_mu)
+            squared_diff_normed = torch.true_divide(squared_difference, x_var)
+            log_likelihood_per_dim = 0.5 * (np.log(2 * np.pi) + x_log_var + squared_diff_normed)
+            recon_loss = torch.sum(log_likelihood_per_dim, dim=1)
 
             KLD = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=-1)
 
@@ -107,7 +108,7 @@ elif args.model == 'AE':
 elif args.model == 'BetaVAE':
     from pythae.models import BetaVAE, BetaVAEConfig
     Encoder = layers.Encoder_Conv_VAE 
-    Decoder = layers.Decoder_Conv_AE 
+    Decoder = layers.Decoder_Conv_GaussVAE  if args.gauss else layers.Decoder_Conv_AE 
 
     my_vae_config = BetaVAEConfig(
         input_dim=(1, 128, 128),
@@ -117,18 +118,18 @@ elif args.model == 'BetaVAE':
     class GaussBetaVAE(BetaVAE):
         def __init__(self, model_config, encoder, decoder):
             super().__init__(model_config, encoder, decoder)
-            # self.logvar_x = torch.nn.Parameter(torch.tensor(np.log(0.1)))
 
         def loss_function(self, recon_x, x, mu, log_var, z):
+            x_mu = recon_x["mu"].reshape(x.shape[0], -1)
+            x_log_var = recon_x["log_var"].reshape(x.shape[0], -1)
+            x = x.reshape(x.shape[0], -1)
 
-            recon_loss = torch.nn.functional.mse_loss(
-                recon_x.reshape(x.shape[0], -1),
-                x.reshape(x.shape[0], -1),
-                reduction="none",
-            ).sum(dim=-1)
-
-            # recon_loss = 0.5 * (torch.log(np.pi * 2 * self.logvar_x.exp()) + recon_loss / self.logvar_x.exp())
-            recon_loss = 0.5 * (torch.log(2 * np.pi * recon_loss) + 1)
+            x_log_var = torch.clamp(x_log_var,-10,1)
+            x_var = torch.exp(x_log_var)
+            squared_difference = torch.square(x - x_mu)
+            squared_diff_normed = torch.true_divide(squared_difference, x_var)
+            log_likelihood_per_dim = 0.5 * (np.log(2 * np.pi) + x_log_var + squared_diff_normed)
+            recon_loss = torch.sum(log_likelihood_per_dim, dim=1)
 
             KLD = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=-1)
 
