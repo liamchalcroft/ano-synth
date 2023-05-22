@@ -28,8 +28,8 @@ class Encoder_Conv_VAE(BaseEncoder):
             nn.LeakyReLU(),
         )
 
-        self.embedding = nn.Linear(1024, args.latent_dim)
-        self.log_var = nn.Linear(1024, args.latent_dim)
+        self.embedding = nn.Linear(self.input_dim[1]*self.input_dim[2]//16, args.latent_dim)
+        self.log_var = nn.Linear(self.input_dim[1]*self.input_dim[2]//16, args.latent_dim)
 
     def forward(self, x: torch.Tensor):
         h1 = self.conv_layers(x).reshape(x.shape[0], -1)
@@ -65,7 +65,7 @@ class Encoder_Conv_AE(BaseEncoder):
             nn.LeakyReLU(),
         )
 
-        self.embedding = nn.Linear(1024, args.latent_dim)
+        self.embedding = nn.Linear(self.input_dim[1]*self.input_dim[2]//16, args.latent_dim)
 
     def forward(self, x: torch.Tensor):
         h1 = self.conv_layers(x).reshape(x.shape[0], -1)
@@ -103,10 +103,12 @@ class Decoder_Conv_AE(BaseDecoder):
             nn.Sigmoid()
         )
 
-        self.fc = nn.Linear(args.latent_dim, 1024)
+        self.fc = nn.Linear(args.latent_dim, self.input_dim[1]*self.input_dim[2]//16)
 
     def forward(self, z: torch.Tensor):
-        h1 = self.fc(z).reshape(z.shape[0], 16, 8, 8)
+        h1 = self.fc(z)
+        hw = int((h1.shape[-1] // 16) ** 0.5)
+        h1 = h1.reshape(h1.shape[0], 16, hw, hw)
         output = ModelOutput(reconstruction=self.deconv_layers(h1))
 
         return output
@@ -144,11 +146,12 @@ class Decoder_Conv_GaussVAE(BaseDecoder):
         )
         self.log_var = nn.ConvTranspose2d(32, self.n_channels, 1, 1)
 
-        self.fc = nn.Linear(args.latent_dim, 1024)
+        self.fc = nn.Linear(args.latent_dim, self.input_dim[1]*self.input_dim[2]//16)
 
     def forward(self, z: torch.Tensor):
-        hw = int((z.shape[-1] // 16) ** 0.5)
-        h1 = self.fc(z).reshape(z.shape[0], 16, hw, hw)
+        h1 = self.fc(z)
+        hw = int((h1.shape[-1] // 16) ** 0.5)
+        h1 = h1.reshape(h1.shape[0], 16, hw, hw)
         out = self.deconv_layers(h1)
         mu = self.mu(out)
         log_var = self.log_var(out)
