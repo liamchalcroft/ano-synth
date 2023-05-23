@@ -25,6 +25,7 @@ parser.add_argument(
 parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
 parser.add_argument("--synth", action='store_true', help="Use synthetic training data.")
 parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
+parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
 args = parser.parse_args()
 
 my_training_config = BaseTrainerConfig(
@@ -40,7 +41,8 @@ my_training_config = BaseTrainerConfig(
 	optimizer_cls="AdamW",
 	optimizer_params={"weight_decay": 0.05, "betas": (0.91, 0.995)},
 	scheduler_cls="ReduceLROnPlateau",
-	scheduler_params={"patience": 5, "factor": 0.5}
+	scheduler_params={"patience": 5, "factor": 0.5},
+    amp=args.amp,
 )
 
 if args.model == 'VAE':
