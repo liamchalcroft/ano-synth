@@ -20,7 +20,7 @@ class VAEDataset(Dataset):
         self.data = data
 
     def __len__(self):
-        return len(self.tiodata)
+        return len(self.data)
 
     def __getitem__(self, idx): # completely ignore given idx and instead iterate internally
         data = self.data.__getitem__(idx)
