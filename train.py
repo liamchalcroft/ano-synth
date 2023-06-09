@@ -201,7 +201,7 @@ wandb_cb.setup(
 training_config=my_training_config, # training config
 model_config=my_vae_config, # model config
 project_name="ano-synth", # specify your wandb project
-entity_name="lchalcroft", # specify your wandb entity
+entity_name="ff2023", # specify your wandb entity
 name = args.name,
 )
 
