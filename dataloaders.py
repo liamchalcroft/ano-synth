@@ -45,7 +45,7 @@ def get_mri_data(device):
 
     subj_train = [{"image":img, "label":img.replace('norm','seg35')} for img in img_list_train]
     subj_val = [{"image":img, "label":img.replace('norm','seg35')} for img in img_list_val]
-    os.makedirs('tpm_data', exist_ok=True)
+    os.makedirs('tmp_data', exist_ok=True)
 
     data_train = VAEDataset(mn.data.PersistentDataset(subj_train, transform=transforms, cache_dir='tmp_data'))
     data_val = VAEDataset(mn.data.PersistentDataset(subj_val, transform=transforms, cache_dir='tmp_data'))
@@ -72,7 +72,7 @@ def get_synth_data(device):
 
     subj_train = [{"image":img, "label":img.replace('norm','seg35')} for img in img_list_train]
     subj_val = [{"image":img, "label":img.replace('norm','seg35')} for img in img_list_val]
-    os.makedirs('tpm_data', exist_ok=True)
+    os.makedirs('tmp_data', exist_ok=True)
 
     data_train = VAEDataset(mn.data.PersistentDataset(subj_train, transform=transforms, cache_dir='tmp_data'))
     data_val = VAEDataset(mn.data.PersistentDataset(subj_val, transform=transforms, cache_dir='tmp_data'))
