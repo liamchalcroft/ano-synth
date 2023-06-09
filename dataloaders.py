@@ -31,6 +31,7 @@ def get_mri_data(device):
     transforms = mn.transforms.Compose([
         mn.transforms.LoadImageD(keys=["image", "label"]),
         mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
+        mn.transforms.ToTensorD(keys=["image","label"], device=device, dtype=float),
         mn.transforms.SpacingD(keys=['image','label'], pixdim=1),
         # mn.transforms.CropForegroundD(keys=['image','label'], source_key='image'),
         mn.transforms.ResizeD(keys=['image','label'], spatial_size=(128,128)),
@@ -55,6 +56,7 @@ def get_synth_data(device):
     transforms = mn.transforms.Compose([
         mn.transforms.LoadImageD(keys=["label"]),
         mn.transforms.EnsureChannelFirstD(keys=["label"]),
+        mn.transforms.ToTensorD(keys=["label"], device=device, dtype=float),
         mn.transforms.SpacingD(keys=['label'], pixdim=1),
         GMMSynthD(mu=255, std=16, fwhm=5, gmm_fwhm=5),
         # mn.transforms.CropForegroundD(keys=['image','label'], source_key='image'),
