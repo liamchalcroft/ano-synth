@@ -1,4 +1,5 @@
 import argparse
+import os, glob
 from pipe import TrainingPipeline, WandbCallback
 from pythae.models import VAE, AE, BetaVAE, VQVAE, RHVAE
 from pythae.trainers import BaseTrainerConfig
@@ -23,9 +24,11 @@ parser.add_argument(
     "--val_interval", type=int, default=2, help="Validation interval."
 )
 parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
+parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
 parser.add_argument("--synth", action='store_true', help="Use synthetic training data.")
 parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
 parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
+parser.add_argument("--resume", action='store_true', help="Find most recent run in output dir and resume from last checkpoint.")
 args = parser.parse_args()
 
 my_training_config = BaseTrainerConfig(
@@ -34,8 +37,8 @@ my_training_config = BaseTrainerConfig(
 	learning_rate=args.lr,
 	per_device_train_batch_size=args.batch_size,
 	per_device_eval_batch_size=args.batch_size,
-	train_dataloader_num_workers=0,
-	eval_dataloader_num_workers=0,
+	train_dataloader_num_workers=args.workers,
+	eval_dataloader_num_workers=args.workers,
 	steps_saving=args.val_interval,
     steps_predict=args.val_interval,
 	optimizer_cls="AdamW",
@@ -190,6 +193,17 @@ else:
 # print(my_vae_model.decoder(torch.ones(1,128))['reconstruction'].shape)
 # exit()
 
+
+if args.resume:
+    model_paths = glob.glob(os.path.join(args.name, '*', 'checkpoint_epoch_*'))
+    model_paths = [{'Epoch':int(pth.split('_')[-1]), 'Path': pth} for pth in model_paths]
+    model_path = sorted(model_paths, key=lambda d: d['Epoch'])[0]
+    print('Resuming training from folder {} at epoch #{}.'.format(model_path['Path'].split('/')[-2], model_path['Epoch']))
+    my_vae_model.load_state_dict(torch.load(os.path.join(model_path['Path'],'model.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
+    epoch = model_path['Path']
+else:
+    epoch = 0
+
 pipeline = TrainingPipeline(
  	training_config=my_training_config,
  	model=my_vae_model
@@ -215,5 +229,6 @@ else:
 pipeline(
     train_data=your_train_data,
     eval_data=your_eval_data,
-    callbacks=callbacks
+    callbacks=callbacks,
+    epoch=epoch+1
 )

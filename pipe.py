@@ -149,6 +149,7 @@ class TrainingPipeline(Pipeline):
         train_data: Union[np.ndarray, torch.Tensor, torch.utils.data.Dataset],
         eval_data: Union[np.ndarray, torch.Tensor, torch.utils.data.Dataset] = None,
         callbacks: List[TrainingCallback] = None,
+        epoch: int = 1
     ):
         """
         Launch the model training on the provided data.
@@ -232,7 +233,7 @@ class TrainingPipeline(Pipeline):
 
         self.trainer = trainer
 
-        trainer.train()
+        trainer.train(start_epoch=epoch)
 
 
 class WandbCallback(TrainingCallback):  # pragma: no cover
