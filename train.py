@@ -29,10 +29,11 @@ parser.add_argument("--synth", action='store_true', help="Use synthetic training
 parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
 parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
 parser.add_argument("--resume", action='store_true', help="Find most recent run in output dir and resume from last checkpoint.")
+parser.add_argument("--root", type=str, default='./', help="Root dir to save output directory within.")
 args = parser.parse_args()
 
 my_training_config = BaseTrainerConfig(
-	output_dir=args.name,
+	output_dir=os.path.join(args.root, args.name),
 	num_epochs=args.epochs,
 	learning_rate=args.lr,
 	per_device_train_batch_size=args.batch_size,
