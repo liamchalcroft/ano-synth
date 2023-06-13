@@ -196,7 +196,7 @@ else:
 
 
 if args.resume:
-    model_paths = glob.glob(os.path.join(args.name, '*', 'checkpoint_epoch_*'))
+    model_paths = glob.glob(os.path.join(args.root, args.name, '*', 'checkpoint_epoch_*'))
     model_paths = [{'Epoch':int(pth.split('_')[-1]), 'Path': pth} for pth in model_paths]
     model_path = sorted(model_paths, key=lambda d: d['Epoch'])[0]
     print('Resuming training from folder {} at epoch #{}.'.format(model_path['Path'].split('/')[-2], model_path['Epoch']))
