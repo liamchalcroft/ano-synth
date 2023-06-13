@@ -198,10 +198,10 @@ else:
 if args.resume:
     model_paths = glob.glob(os.path.join(args.root, args.name, '*', 'checkpoint_epoch_*'))
     model_paths = [{'Epoch':int(pth.split('_')[-1]), 'Path': pth} for pth in model_paths]
-    model_path = sorted(model_paths, key=lambda d: d['Epoch'])[0]
+    model_path = sorted(model_paths, key=lambda d: d['Epoch'])[-1]
     print('Resuming training from folder {} at epoch #{}.'.format(model_path['Path'].split('/')[-2], model_path['Epoch']))
     my_vae_model.load_state_dict(torch.load(os.path.join(model_path['Path'],'model.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))['model_state_dict'])
-    epoch = model_path['Path']
+    epoch = model_path['Epoch']
 else:
     epoch = 0
 
