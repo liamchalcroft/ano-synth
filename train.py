@@ -202,8 +202,12 @@ if args.resume:
     print('Resuming training from folder {} at epoch #{}.'.format(model_path['Path'].split('/')[-2], model_path['Epoch']))
     my_vae_model.load_state_dict(torch.load(os.path.join(model_path['Path'],'model.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))['model_state_dict'])
     epoch = model_path['Epoch']
+    optimizer_state = torch.load(os.path.join(model_path['Path'],'optimizer.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+    scheduler_state = torch.load(os.path.join(model_path['Path'],'scheduler.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 else:
     epoch = 0
+    optimizer_state = None
+    scheduler_state = None
 
 pipeline = TrainingPipeline(
  	training_config=my_training_config,
@@ -231,5 +235,7 @@ pipeline(
     train_data=your_train_data,
     eval_data=your_eval_data,
     callbacks=callbacks,
-    epoch=epoch+1
+    epoch=epoch+1,
+    optimizer_state_dict=optimizer_state,
+    scheduler_state_dict=scheduler_state
 )

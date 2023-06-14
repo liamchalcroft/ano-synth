@@ -149,7 +149,9 @@ class TrainingPipeline(Pipeline):
         train_data: Union[np.ndarray, torch.Tensor, torch.utils.data.Dataset],
         eval_data: Union[np.ndarray, torch.Tensor, torch.utils.data.Dataset] = None,
         callbacks: List[TrainingCallback] = None,
-        epoch: int = 1
+        epoch: int = 1,
+        optimizer_state_dict = None,
+        scheduler_state_dict = None
     ):
         """
         Launch the model training on the provided data.
@@ -232,6 +234,10 @@ class TrainingPipeline(Pipeline):
             )
 
         self.trainer = trainer
+        if optimizer_state_dict is not None:
+            self.trainer.optimizer.load_state_dict(optimizer_state_dict)
+        if scheduler_state_dict is not None:
+            self.trainer.scheduler.load_state_dict(scheduler_state_dict)
 
         trainer.train(start_epoch=epoch)
 
