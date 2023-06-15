@@ -29,6 +29,7 @@ parser.add_argument("--synth", action='store_true', help="Use synthetic training
 parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
 parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
 parser.add_argument("--resume", action='store_true', help="Find most recent run in output dir and resume from last checkpoint.")
+parser.add_argument("--ffcv", action='store_true', help="Overwrite default dataloader with FFCV dataloaders.")
 parser.add_argument("--root", type=str, default='./', help="Root dir to save output directory within.")
 args = parser.parse_args()
 
@@ -231,11 +232,23 @@ if args.synth:
 else:
     your_train_data, your_eval_data = dataloaders.get_mri_data(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
+if args.ffcv:
+    import dataloaders_ffcv
+    if args.synth:
+        ffcv_train, ffcv_val = dataloaders_ffcv.get_mri_ffcv(args.batch_size, args.workers)
+    else:
+        ffcv_train, ffcv_val = dataloaders_ffcv.get_synth_ffcv(args.batch_size, args.workers)
+else:
+    ffcv_train = None
+    ffcv_val = None
+
 pipeline(
     train_data=your_train_data,
     eval_data=your_eval_data,
     callbacks=callbacks,
     epoch=epoch+1,
     optimizer_state_dict=optimizer_state,
-    scheduler_state_dict=scheduler_state
+    scheduler_state_dict=scheduler_state,
+    ffcv_train=ffcv_train,
+    ffcv_val=ffcv_val
 )

@@ -151,7 +151,9 @@ class TrainingPipeline(Pipeline):
         callbacks: List[TrainingCallback] = None,
         epoch: int = 1,
         optimizer_state_dict = None,
-        scheduler_state_dict = None
+        scheduler_state_dict = None,
+        ffcv_train = None,
+        ffcv_val = None
     ):
         """
         Launch the model training on the provided data.
@@ -238,6 +240,11 @@ class TrainingPipeline(Pipeline):
             self.trainer.optimizer.load_state_dict(optimizer_state_dict)
         if scheduler_state_dict is not None:
             self.trainer.scheduler.load_state_dict(scheduler_state_dict)
+
+        if ffcv_train is not None:
+            self.trainer.train_loader = ffcv_train
+        if ffcv_val is not None:
+            self.trainer.val_loader = ffcv_val
 
         trainer.train(start_epoch=epoch)
 
