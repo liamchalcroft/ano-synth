@@ -75,7 +75,6 @@ class Encoder_Conv_AE(BaseEncoder):
         h1 = self.conv_layers(x).reshape(x.shape[0], -1)
         print(h1.shape)
         print(self.embedding)
-        print(self.log_var)
         output = ModelOutput(
             embedding=self.embedding(h1)
         )
