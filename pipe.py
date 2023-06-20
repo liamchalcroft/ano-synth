@@ -26,7 +26,7 @@ class DummyDataset:
         self.data = None
 
     def __getitem__(self, idx):
-        return DatasetOutput(data=torch.randn(1,200,200))
+        return DatasetOutput(data=torch.randn(1,192,192))
 
     def __len__(self):
         return 100
