@@ -71,7 +71,11 @@ class Encoder_Conv_AE(BaseEncoder):
         self.embedding = nn.Linear(self.input_dim[1]*self.input_dim[2]//16, args.latent_dim)
 
     def forward(self, x: torch.Tensor):
+        print(x.shape)
         h1 = self.conv_layers(x).reshape(x.shape[0], -1)
+        print(h1.shape)
+        print(self.embedding)
+        print(self.log_var)
         output = ModelOutput(
             embedding=self.embedding(h1)
         )
