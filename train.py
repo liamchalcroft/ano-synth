@@ -56,7 +56,7 @@ if args.model == 'VAE':
     Decoder = layers.Decoder_Conv_GaussVAE  if args.gauss else layers.Decoder_Conv_AE 
 
     my_vae_config = VAEConfig(
-        input_dim=(1, 128, 128),
+        input_dim=(1, 200, 200),
         latent_dim=128 # match the 2020 Baur/Navab paper
     )
 
@@ -103,7 +103,7 @@ elif args.model == 'AE':
     Decoder = layers.Decoder_Conv_AE 
 
     my_vae_config = AEConfig(
-        input_dim=(1, 128, 128),
+        input_dim=(1, 200, 200),
         latent_dim=128 # match the 2020 Baur/Navab paper
     )
 
@@ -118,7 +118,7 @@ elif args.model == 'BetaVAE':
     Decoder = layers.Decoder_Conv_GaussVAE  if args.gauss else layers.Decoder_Conv_AE 
 
     my_vae_config = BetaVAEConfig(
-        input_dim=(1, 128, 128),
+        input_dim=(1, 200, 200),
         latent_dim=128 # match the 2020 Baur/Navab paper
     )
 
@@ -164,7 +164,7 @@ elif args.model == 'VQVAE':
     Decoder = layers.Decoder_Conv_AE 
 
     my_vae_config = VQVAEConfig(
-        input_dim=(1, 128, 128),
+        input_dim=(1, 200, 200),
         latent_dim=128 # match the 2020 Baur/Navab paper
     )
 
@@ -179,7 +179,7 @@ elif args.model == 'RHVAE':
     Decoder = layers.Decoder_Conv_AE 
 
     my_vae_config = RHVAEConfig(
-        input_dim=(1, 128, 128),
+        input_dim=(1, 200, 200),
         latent_dim=128 # match the 2020 Baur/Navab paper
     )
 
