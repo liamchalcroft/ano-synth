@@ -207,7 +207,7 @@ class TrainingPipeline(Pipeline):
                 logger.info("Checking eval dataset...")
                 self._check_dataset(eval_dataset)
             else:
-                eval_dataset = None
+                eval_dataset = DummyDataset()
 
         else:
             eval_dataset = None
