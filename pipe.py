@@ -20,6 +20,17 @@ logger.addHandler(console)
 logger.setLevel(logging.INFO)
 
 
+class DummyDataset:
+    def __init__(self):
+        self.data = None
+
+    def __getitem__(self, idx):
+        return (np.random(8,8))
+
+    def __len__(self):
+        return 100
+
+
 class TrainingPipeline(Pipeline):
     """
     This Pipeline provides an end to end way to train your VAE model.
@@ -180,6 +191,8 @@ class TrainingPipeline(Pipeline):
         if ffcv_train is None:
             logger.info("Checking train dataset...")
             self._check_dataset(train_dataset)
+        else:
+            train_dataset = DummyDataset()
 
         if eval_data is not None:
             if isinstance(eval_data, np.ndarray) or isinstance(eval_data, torch.Tensor):
@@ -193,6 +206,8 @@ class TrainingPipeline(Pipeline):
             if ffcv_val is None:
                 logger.info("Checking eval dataset...")
                 self._check_dataset(eval_dataset)
+            else:
+                eval_dataset = None
 
         else:
             eval_dataset = None
