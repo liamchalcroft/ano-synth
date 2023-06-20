@@ -177,8 +177,9 @@ class TrainingPipeline(Pipeline):
         else:
             train_dataset = train_data
 
-        logger.info("Checking train dataset...")
-        self._check_dataset(train_dataset)
+        if ffcv_train is None:
+            logger.info("Checking train dataset...")
+            self._check_dataset(train_dataset)
 
         if eval_data is not None:
             if isinstance(eval_data, np.ndarray) or isinstance(eval_data, torch.Tensor):
@@ -189,8 +190,9 @@ class TrainingPipeline(Pipeline):
             else:
                 eval_dataset = eval_data
 
-            logger.info("Checking eval dataset...")
-            self._check_dataset(eval_dataset)
+            if ffcv_val is None:
+                logger.info("Checking eval dataset...")
+                self._check_dataset(eval_dataset)
 
         else:
             eval_dataset = None
