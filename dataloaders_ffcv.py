@@ -12,17 +12,29 @@ import numpy as np
 # Random resized crop
 decoder = SimpleGrayscaleImageDecoder()
 
+# class Norm(torch.nn.Module):
+#   def __init__(self, mean, std):
+#     super().__init__()
+#     self.mean = mean
+#     self.std = std
+
+#   def forward(self, x):
+#     if x.mean()==0 and x.std()==0:
+#       return x
+#     else:
+#       return (x-x.mean()) / x.std()
+
 class Norm(torch.nn.Module):
-  def __init__(self, mean, std):
+  def __init__(self):
     super().__init__()
-    self.mean = mean
-    self.std = std
 
   def forward(self, x):
     if x.mean()==0 and x.std()==0:
       return x
     else:
-      return (x-x.mean()) / x.std()
+      x = x - x.min()
+      x = x / x.max()
+      return x
 
 class GMMSynth(torch.nn.Module):
     def __init__(self, mu=255, std=16, fwhm=5, gmm_fwhm=5):
@@ -49,7 +61,7 @@ mri_pipeline = [decoder,
                 ToTensor(), 
                 ToTorchImage(), 
                 Convert(torch.float),
-                ModuleWrapper(Norm(mean=0,std=1)),
+                ModuleWrapper(Norm()),
                 ToDevice(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))]
 synth_pipeline = [decoder, 
                   RandomHorizontalFlip(),
@@ -58,7 +70,7 @@ synth_pipeline = [decoder,
                   ToTorchImage(), 
                   Convert(torch.float),
                   ModuleWrapper(GMMSynth()), 
-                  ModuleWrapper(Norm(mean=0,std=1)), 
+                  ModuleWrapper(Norm()), 
                   ToDevice(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))]
 
 # Replaces PyTorch data loader (`torch.utils.data.Dataloader`)
