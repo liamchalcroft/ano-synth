@@ -33,6 +33,9 @@ class Encoder_Conv_VAE(BaseEncoder):
 
     def forward(self, x: torch.Tensor):
         h1 = self.conv_layers(x).reshape(x.shape[0], -1)
+        print(h1.shape)
+        print(self.embedding)
+        print(self.log_var)
         output = ModelOutput(
             embedding=self.embedding(h1),
             log_covariance=self.log_var(h1)
@@ -57,9 +60,9 @@ class Encoder_Conv_AE(BaseEncoder):
             nn.Conv2d(64, 128, 5, 2, padding=2),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(),
-            # nn.Conv2d(128, 128, 5, 2, padding=2),
-            # nn.BatchNorm2d(128),
-            # nn.LeakyReLU(),
+            nn.Conv2d(128, 128, 5, 2, padding=2),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(),
             nn.Conv2d(128, 16, 1, 1, padding=0),
             nn.BatchNorm2d(16),
             nn.LeakyReLU(),
@@ -87,9 +90,9 @@ class Decoder_Conv_AE(BaseDecoder):
             nn.ConvTranspose2d(16, 128, 1, 1),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(),
-            # nn.ConvTranspose2d(128, 128, 5, 2, padding=2, output_padding=1),
-            # nn.BatchNorm2d(128),
-            # nn.LeakyReLU(),
+            nn.ConvTranspose2d(128, 128, 5, 2, padding=2, output_padding=1),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(),
             nn.ConvTranspose2d(128, 64, 5, 2, padding=2, output_padding=1),
             nn.BatchNorm2d(64),
             nn.LeakyReLU(),
