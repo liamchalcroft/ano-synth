@@ -10,6 +10,7 @@ from pythae.models import BaseAE, BaseAEConfig
 from pythae.trainers.base_trainer.base_training_config import BaseTrainerConfig
 from pythae.trainers import *
 from pythae.trainers.training_callbacks import TrainingCallback, wandb_is_available, rename_logs
+from pythae.data.datasets import DatasetOutput
 from pythae.pipelines.base_pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ class DummyDataset:
         self.data = None
 
     def __getitem__(self, idx):
-        return (torch.randn(1,200,200))
+        return DatasetOutput(data=torch.randn(1,200,200))
 
     def __len__(self):
         return 100
