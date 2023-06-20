@@ -66,7 +66,7 @@ def get_mri_ffcv(batch_size, num_workers):
     mri_train_loader = Loader('oasis/oasis2d_mri_train.beton', batch_size=batch_size, num_workers=num_workers,
                     order=OrderOption.RANDOM, pipelines={'image': mri_pipeline},
                     custom_fields={'image': RGBImageField(write_mode='raw', is_rgb=False)})
-    mri_val_loader = Loader('oasis/oasis2d_mri_val.beton', batch_size=512, num_workers=16,
+    mri_val_loader = Loader('oasis/oasis2d_mri_val.beton', batch_size=batch_size, num_workers=num_workers,
                     order=OrderOption.RANDOM, pipelines={'image': mri_pipeline},
                     custom_fields={'image': RGBImageField(write_mode='raw', is_rgb=False)})
     return mri_train_loader, mri_val_loader
@@ -75,7 +75,7 @@ def get_synth_ffcv(batch_size, num_workers):
     synth_train_loader = Loader('oasis/oasis2d_synth_train.beton', batch_size=batch_size, num_workers=num_workers,
                     order=OrderOption.RANDOM, pipelines={'image': synth_pipeline},
                     custom_fields={'image': RGBImageField(write_mode='raw', is_rgb=False)})
-    synth_val_loader = Loader('oasis/oasis2d_synth_val.beton', batch_size=512, num_workers=16,
+    synth_val_loader = Loader('oasis/oasis2d_synth_val.beton', batch_size=batch_size, num_workers=num_workers,
                     order=OrderOption.RANDOM, pipelines={'image': synth_pipeline},
                     custom_fields={'image': RGBImageField(write_mode='raw', is_rgb=False)})
     return synth_train_loader, synth_val_loader
