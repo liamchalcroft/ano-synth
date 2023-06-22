@@ -100,6 +100,7 @@ class GMMSynthD:
     def __call__(self, data):
         d = dict(data)
         label = d["label"]
+        print(label.unique())
         label.apply_(lambda val: self.labmap[val]) # map to symmetric mask
         labels = [
             mn.transforms.GaussianSmooth(np.random.uniform(0, self.gmm_fwhm))(torch.normal(np.random.uniform(0, self.mu), np.random.uniform(0, self.std), label.shape) * (label==i))
