@@ -34,9 +34,11 @@ def get_mri_data(device):
         mn.transforms.ToTensorD(keys=["image","label"], 
                                 # device=device, 
                                 dtype=float),
+        mn.transforms.ToTensorD(keys=["label"], 
+                                # device=device, 
+                                dtype=int),
         mn.transforms.SpacingD(keys=['image','label'], pixdim=1, mode=['bilinear', 'nearest']),
-        # mn.transforms.CropForegroundD(keys=['image','label'], source_key='image'),
-        mn.transforms.ResizeD(keys=['image','label'], spatial_size=(192,192)),
+        mn.transforms.ResizeD(keys=['image','label'], spatial_size=(192,192), mode=('bilinear','nearest')),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1),
         mn.transforms.RandFlipD(keys=['image','label'], spatial_axis=0, prob=0.5),
         mn.transforms.RandFlipD(keys=['image','label'], spatial_axis=1, prob=0.5),
@@ -59,13 +61,12 @@ def get_synth_data(device):
     transforms = mn.transforms.Compose([
         mn.transforms.LoadImageD(keys=["label"]),
         mn.transforms.EnsureChannelFirstD(keys=["label"]),
-        mn.transforms.ToTensorD(keys=["image","label"], 
+        mn.transforms.ToTensorD(keys=["label"], 
                                 # device=device, 
-                                dtype=float),
+                                dtype=int),
         mn.transforms.SpacingD(keys=['label'], pixdim=1, mode=['nearest']),
         GMMSynthD(mu=255, std=16, fwhm=5, gmm_fwhm=5),
-        # mn.transforms.CropForegroundD(keys=['image','label'], source_key='image'),
-        mn.transforms.ResizeD(keys=['image','label'], spatial_size=(192,192)),
+        mn.transforms.ResizeD(keys=['image','label'], spatial_size=(192,192), mode=('bilinear','nearest')),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1),
         mn.transforms.RandFlipD(keys=['image','label'], spatial_axis=0, prob=0.5),
         mn.transforms.RandFlipD(keys=['image','label'], spatial_axis=1, prob=0.5),
@@ -98,8 +99,8 @@ class GMMSynthD:
         }
 
     def __call__(self, data):
-        d = dict(data).int()
-        label = d["label"]
+        d = dict(data)
+        label = d["label"].int()
         label.apply_(lambda val: self.labmap[val]) # map to symmetric mask
         labels = [
             mn.transforms.GaussianSmooth(np.random.uniform(0, self.gmm_fwhm))(torch.normal(np.random.uniform(0, self.mu), np.random.uniform(0, self.std), label.shape) * (label==i))
