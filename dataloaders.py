@@ -98,7 +98,7 @@ class GMMSynthD:
         }
 
     def __call__(self, data):
-        d = dict(data)
+        d = dict(data).int()
         label = d["label"]
         print(label.unique())
         label.apply_(lambda val: self.labmap[val]) # map to symmetric mask
