@@ -1,4 +1,5 @@
 import argparse
+import os, glob
 from pipe import TrainingPipeline, WandbCallback
 from pythae.models import VAE, AE, BetaVAE, VQVAE, RHVAE
 from pythae.trainers import BaseTrainerConfig
@@ -23,21 +24,25 @@ parser.add_argument(
     "--val_interval", type=int, default=2, help="Validation interval."
 )
 parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
+parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
 parser.add_argument("--synth", action='store_true', help="Use synthetic training data.")
 parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
 parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
+parser.add_argument("--resume", action='store_true', help="Find most recent run in output dir and resume from last checkpoint.")
+parser.add_argument("--ffcv", action='store_true', help="Overwrite default dataloader with FFCV dataloaders.")
+parser.add_argument("--root", type=str, default='./', help="Root dir to save output directory within.")
 args = parser.parse_args()
 
 my_training_config = BaseTrainerConfig(
-	output_dir=args.name,
+	output_dir=os.path.join(args.root, args.name),
 	num_epochs=args.epochs,
 	learning_rate=args.lr,
 	per_device_train_batch_size=args.batch_size,
 	per_device_eval_batch_size=args.batch_size,
-	train_dataloader_num_workers=0,
-	eval_dataloader_num_workers=0,
-	steps_saving=5,
-    steps_predict=5,
+	train_dataloader_num_workers=args.workers,
+	eval_dataloader_num_workers=args.workers,
+	steps_saving=args.val_interval,
+    steps_predict=args.val_interval,
 	optimizer_cls="AdamW",
 	optimizer_params={"weight_decay": 0.05, "betas": (0.91, 0.995)},
 	scheduler_cls="ReduceLROnPlateau",
@@ -51,7 +56,7 @@ if args.model == 'VAE':
     Decoder = layers.Decoder_Conv_GaussVAE  if args.gauss else layers.Decoder_Conv_AE 
 
     my_vae_config = VAEConfig(
-        input_dim=(1, 128, 128),
+        input_dim=(1, 192, 192),
         latent_dim=128 # match the 2020 Baur/Navab paper
     )
 
@@ -98,7 +103,7 @@ elif args.model == 'AE':
     Decoder = layers.Decoder_Conv_AE 
 
     my_vae_config = AEConfig(
-        input_dim=(1, 128, 128),
+        input_dim=(1, 192, 192),
         latent_dim=128 # match the 2020 Baur/Navab paper
     )
 
@@ -113,7 +118,7 @@ elif args.model == 'BetaVAE':
     Decoder = layers.Decoder_Conv_GaussVAE  if args.gauss else layers.Decoder_Conv_AE 
 
     my_vae_config = BetaVAEConfig(
-        input_dim=(1, 128, 128),
+        input_dim=(1, 192, 192),
         latent_dim=128 # match the 2020 Baur/Navab paper
     )
 
@@ -159,7 +164,7 @@ elif args.model == 'VQVAE':
     Decoder = layers.Decoder_Conv_AE 
 
     my_vae_config = VQVAEConfig(
-        input_dim=(1, 128, 128),
+        input_dim=(1, 192, 192),
         latent_dim=128 # match the 2020 Baur/Navab paper
     )
 
@@ -174,7 +179,7 @@ elif args.model == 'RHVAE':
     Decoder = layers.Decoder_Conv_AE 
 
     my_vae_config = RHVAEConfig(
-        input_dim=(1, 128, 128),
+        input_dim=(1, 192, 192),
         latent_dim=128 # match the 2020 Baur/Navab paper
     )
 
@@ -189,6 +194,21 @@ else:
 # import torch
 # print(my_vae_model.decoder(torch.ones(1,128))['reconstruction'].shape)
 # exit()
+
+
+if args.resume:
+    model_paths = glob.glob(os.path.join(args.root, args.name, '*', 'checkpoint_epoch_*'))
+    model_paths = [{'Epoch':int(pth.split('_')[-1]), 'Path': pth} for pth in model_paths]
+    model_path = sorted(model_paths, key=lambda d: d['Epoch'])[-1]
+    print('Resuming training from folder {} at epoch #{}.'.format(model_path['Path'].split('/')[-2], model_path['Epoch']))
+    my_vae_model.load_state_dict(torch.load(os.path.join(model_path['Path'],'model.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))['model_state_dict'])
+    epoch = model_path['Epoch']
+    optimizer_state = torch.load(os.path.join(model_path['Path'],'optimizer.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+    scheduler_state = torch.load(os.path.join(model_path['Path'],'scheduler.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+else:
+    epoch = 0
+    optimizer_state = None
+    scheduler_state = None
 
 pipeline = TrainingPipeline(
  	training_config=my_training_config,
@@ -212,8 +232,23 @@ if args.synth:
 else:
     your_train_data, your_eval_data = dataloaders.get_mri_data(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
+if args.ffcv:
+    import dataloaders_ffcv
+    if args.synth:
+        ffcv_train, ffcv_val = dataloaders_ffcv.get_mri_ffcv(args.batch_size, args.workers)
+    else:
+        ffcv_train, ffcv_val = dataloaders_ffcv.get_synth_ffcv(args.batch_size, args.workers)
+else:
+    ffcv_train = None
+    ffcv_val = None
+
 pipeline(
     train_data=your_train_data,
     eval_data=your_eval_data,
-    callbacks=callbacks
+    callbacks=callbacks,
+    epoch=epoch+1,
+    optimizer_state_dict=optimizer_state,
+    scheduler_state_dict=scheduler_state,
+    ffcv_train=ffcv_train,
+    ffcv_val=ffcv_val
 )

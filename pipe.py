@@ -10,6 +10,7 @@ from pythae.models import BaseAE, BaseAEConfig
 from pythae.trainers.base_trainer.base_training_config import BaseTrainerConfig
 from pythae.trainers import *
 from pythae.trainers.training_callbacks import TrainingCallback, wandb_is_available, rename_logs
+from pythae.data.datasets import DatasetOutput
 from pythae.pipelines.base_pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,17 @@ logger = logging.getLogger(__name__)
 console = logging.StreamHandler()
 logger.addHandler(console)
 logger.setLevel(logging.INFO)
+
+
+class DummyDataset:
+    def __init__(self):
+        self.data = None
+
+    def __getitem__(self, idx):
+        return DatasetOutput(data=torch.randn(1,192,192))
+
+    def __len__(self):
+        return 100
 
 
 class TrainingPipeline(Pipeline):
@@ -149,6 +161,11 @@ class TrainingPipeline(Pipeline):
         train_data: Union[np.ndarray, torch.Tensor, torch.utils.data.Dataset],
         eval_data: Union[np.ndarray, torch.Tensor, torch.utils.data.Dataset] = None,
         callbacks: List[TrainingCallback] = None,
+        epoch: int = 1,
+        optimizer_state_dict = None,
+        scheduler_state_dict = None,
+        ffcv_train = None,
+        ffcv_val = None
     ):
         """
         Launch the model training on the provided data.
@@ -172,8 +189,11 @@ class TrainingPipeline(Pipeline):
         else:
             train_dataset = train_data
 
-        logger.info("Checking train dataset...")
-        self._check_dataset(train_dataset)
+        if ffcv_train is None:
+            logger.info("Checking train dataset...")
+            self._check_dataset(train_dataset)
+        else:
+            train_dataset = DummyDataset()
 
         if eval_data is not None:
             if isinstance(eval_data, np.ndarray) or isinstance(eval_data, torch.Tensor):
@@ -184,8 +204,11 @@ class TrainingPipeline(Pipeline):
             else:
                 eval_dataset = eval_data
 
-            logger.info("Checking eval dataset...")
-            self._check_dataset(eval_dataset)
+            if ffcv_val is None:
+                logger.info("Checking eval dataset...")
+                self._check_dataset(eval_dataset)
+            else:
+                eval_dataset = DummyDataset()
 
         else:
             eval_dataset = None
@@ -228,11 +251,21 @@ class TrainingPipeline(Pipeline):
                 eval_dataset=eval_dataset,
                 training_config=self.training_config,
                 callbacks=callbacks,
+                ffcv_device=(ffcv_train is not None),
             )
 
         self.trainer = trainer
+        if optimizer_state_dict is not None:
+            self.trainer.optimizer.load_state_dict(optimizer_state_dict)
+        if scheduler_state_dict is not None:
+            self.trainer.scheduler.load_state_dict(scheduler_state_dict)
 
-        trainer.train()
+        if ffcv_train is not None:
+            self.trainer.train_loader = ffcv_train
+        if ffcv_val is not None:
+            self.trainer.val_loader = ffcv_val
+
+        trainer.train(start_epoch=epoch)
 
 
 class WandbCallback(TrainingCallback):  # pragma: no cover
