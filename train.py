@@ -235,9 +235,9 @@ else:
 if args.ffcv:
     import dataloaders_ffcv
     if args.synth:
-        ffcv_train, ffcv_val = dataloaders_ffcv.get_mri_ffcv(args.batch_size, args.workers)
-    else:
         ffcv_train, ffcv_val = dataloaders_ffcv.get_synth_ffcv(args.batch_size, args.workers)
+    else:
+        ffcv_train, ffcv_val = dataloaders_ffcv.get_mri_ffcv(args.batch_size, args.workers)
 else:
     ffcv_train = None
     ffcv_val = None
