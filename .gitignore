@@ -1,5 +1,17 @@
-*.tar 
+ano-synth-experiments/
+oasis_ffcv/
+oasis_jpg/
+brats/
 
+*.zip
+
+vae-cris-2/
+
+*.ipynb
+ano_synth_vae_2.ipynb
+ffcv/
+*.gz
+*.tar 
 oasis
 oasis3d
 tmp_data

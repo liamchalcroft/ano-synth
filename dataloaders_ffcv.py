@@ -3,7 +3,9 @@ from ffcv.transforms import (ToTensor, ToDevice,
                              ToTorchImage, RandomHorizontalFlip,
                              RandomTranslate,
                              ModuleWrapper, Convert)
+
 from ffcv.fields.decoders import SimpleGrayscaleImageDecoder
+
 from ffcv.fields import RGBImageField
 import torch
 import monai as mn
