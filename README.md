@@ -36,3 +36,12 @@ python 02_create_dataset_3d_to_2d.py
 ```
 python 03_create_dataset_2d_to_jpeg.py
 ```
+
+## Create Dataset from JPEG to FFCV
+```
+python 04_create_dataset_jpeg_to_ffcv.py
+```
+## Test FFCV
+```
+python 05_test_ffcv.py
+```
