@@ -23,7 +23,13 @@ class VAEDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx): # completely ignore given idx and instead iterate internally
-        data = self.data.__getitem__(idx)
+        try:
+            data = self.data[idx]
+        except:
+            print("idx : ",idx)
+            print("len(self.data) : ",len(self.data))
+            data = self.data[min(idx,len(self.data)-1)]
+            
         return DatasetOutput(data=data["image"], label=data["label"])
 
 
@@ -34,9 +40,6 @@ def get_mri_data(device):
         mn.transforms.ToTensorD(keys=["image","label"], 
                                 # device=device, 
                                 dtype=float),
-        mn.transforms.ToTensorD(keys=["label"], 
-                                # device=device, 
-                                dtype=int),
         mn.transforms.SpacingD(keys=['image','label'], pixdim=1, mode=['bilinear', 'nearest']),
         mn.transforms.ResizeD(keys=['image','label'], spatial_size=(192,192), mode=('bilinear','nearest')),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1),
@@ -44,15 +47,15 @@ def get_mri_data(device):
         mn.transforms.RandFlipD(keys=['image','label'], spatial_axis=1, prob=0.5),
         mn.transforms.Rand2DElasticD(keys=['image','label'], spacing=(10,10), magnitude_range=(50,150),
                                   rotate_range=30, shear_range=0.15, translate_range=0.5, scale_range=0.2,
-                                  padding_mode='constant', mode=('bilinear','nearest')),
+                                  padding_mode='reflection', mode=('bilinear','nearest')),
     ])
 
     subj_train = [{"image":img, "label":img.replace('norm','seg35')} for img in img_list_train]
     subj_val = [{"image":img, "label":img.replace('norm','seg35')} for img in img_list_val]
     os.makedirs('tmp_data', exist_ok=True)
 
-    data_train = VAEDataset(mn.data.PersistentDataset(subj_train, transform=transforms, cache_dir='tmp_data'))
-    data_val = VAEDataset(mn.data.PersistentDataset(subj_val, transform=transforms, cache_dir='tmp_data'))
+    data_train = VAEDataset(mn.data.Dataset(subj_train, transform=transforms))#, cache_dir='tmp_data'))
+    data_val = VAEDataset(mn.data.Dataset(subj_val, transform=transforms))#, cache_dir='tmp_data'))
 
     return data_train, data_val
 
@@ -72,7 +75,7 @@ def get_synth_data(device):
         mn.transforms.RandFlipD(keys=['image','label'], spatial_axis=1, prob=0.5),
         mn.transforms.Rand2DElasticD(keys=['image','label'], spacing=(10,10), magnitude_range=(50,150),
                                   rotate_range=30, shear_range=0.15, translate_range=0.5, scale_range=0.2,
-                                  padding_mode='constant', mode=('bilinear','nearest')),
+                                  padding_mode='reflection', mode=('bilinear','nearest')),
     ])
 
     subj_train = [{"image":img, "label":img.replace('norm','seg35')} for img in img_list_train]

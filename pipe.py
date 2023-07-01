@@ -132,6 +132,7 @@ class TrainingPipeline(Pipeline):
                 f"Exception raised: {type(e)} with message: " + str(e)
             ) from e
 
+        print("dataset_output.keys() : ",dataset_output.keys())
         if "data" not in dataset_output.keys():
             raise DatasetError(
                 "The Dataset should output a dictionnary with keys ['data']"
@@ -260,12 +261,17 @@ class TrainingPipeline(Pipeline):
         if scheduler_state_dict is not None:
             self.trainer.scheduler.load_state_dict(scheduler_state_dict)
 
+        print("////"*10)
         if ffcv_train is not None:
+            print("train_loader = ffcv_train")
             self.trainer.train_loader = ffcv_train
         if ffcv_val is not None:
+            print("val_loader = ffcv_val")
             self.trainer.val_loader = ffcv_val
 
-        trainer.train(start_epoch=epoch)
+        print("epoch :",epoch)
+        trainer.train(start_epoch=epoch)# pythae does not accept 
+        #https://pythae.readthedocs.io/en/latest/trainers/pythae.trainers.base_trainer.html#pythae.trainers.BaseTrainer:~:text=train(log_output_dir,%5Bsource%5D
 
 
 class WandbCallback(TrainingCallback):  # pragma: no cover
@@ -395,4 +401,5 @@ class WandbCallback(TrainingCallback):  # pragma: no cover
             self._wandb.log({"my_val_table": val_table})
 
     def on_train_end(self, training_config: BaseTrainerConfig, **kwargs):
+        self._wandb.finish()
         self.run.finish()
