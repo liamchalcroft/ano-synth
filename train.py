@@ -268,11 +268,6 @@ if __name__ =='__main__':
         optimizer_state = None
         scheduler_state = None
 
-pipeline = TrainingPipeline(
-    training_config=my_training_config,
-    model=my_vae_model
-)
-
     pipeline = TrainingPipeline(
         training_config=my_training_config,
         model=my_vae_model
