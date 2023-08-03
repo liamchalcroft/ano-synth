@@ -247,27 +247,28 @@ if __name__ =='__main__':
     
     if args.resume or args.checkpoint_path:
         if args.checkpoint_path:
-            model_path = args.checkpoint_path
-            checkpoint = torch.load(model_path, map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-            epoch = checkpoint['epoch']
-            optimizer_state = checkpoint['optimizer_state_dict']
-            scheduler_state = checkpoint['scheduler_state_dict']
+            model_paths = glob.glob(os.path.join(args.checkpoint_path, 'checkpoint_epoch_*'))
+            model_paths = [{'Epoch':int(pth.split('_')[-1]), 'Path': pth} for pth in model_paths]
+            model_path = sorted(model_paths, key=lambda d: d['Epoch'])[-1]
+            print('Resuming training from folder {} at epoch #{}.'.format(model_path['Path'].split('/')[-2], model_path['Epoch']))
+            my_vae_model.load_state_dict(torch.load(os.path.join(model_path['Path'],'model.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))['model_state_dict'])
+            epoch = model_path['Epoch']
+            optimizer_state = torch.load(os.path.join(model_path['Path'],'optimizer.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+            scheduler_state = torch.load(os.path.join(model_path['Path'],'scheduler.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
         else:
             model_paths = glob.glob(os.path.join(args.root, args.name, '*', 'checkpoint_epoch_*'))
             model_paths = [{'Epoch':int(pth.split('_')[-1]), 'Path': pth} for pth in model_paths]
-            model_path = sorted(model_paths, key=lambda d: d['Epoch'])[-1]['Path']
-            epoch = int(model_path.split('_')[-1])
-            checkpoint = torch.load(model_path, map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-            optimizer_state = checkpoint['optimizer_state_dict']
-            scheduler_state = checkpoint['scheduler_state_dict']
-
-        print('Resuming training from checkpoint: {}'.format(model_path))
-        my_vae_model.load_state_dict(checkpoint['model_state_dict'])
+            model_path = sorted(model_paths, key=lambda d: d['Epoch'])[-1]
+            print('Resuming training from folder {} at epoch #{}.'.format(model_path['Path'].split('/')[-2], model_path['Epoch']))
+            my_vae_model.load_state_dict(torch.load(os.path.join(model_path['Path'],'model.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))['model_state_dict'])
+            epoch = model_path['Epoch']
+            optimizer_state = torch.load(os.path.join(model_path['Path'],'optimizer.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+            scheduler_state = torch.load(os.path.join(model_path['Path'],'scheduler.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
     else:
         epoch = 0
         optimizer_state = None
         scheduler_state = None
-
+        
     pipeline = TrainingPipeline(
         training_config=my_training_config,
         model=my_vae_model
