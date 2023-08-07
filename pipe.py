@@ -245,6 +245,7 @@ class TrainingPipeline(Pipeline):
             )
 
         self.trainer = trainer
+        self.trainer.prepare_training()
         if optimizer_state_dict is not None:
             self.trainer.optimizer.load_state_dict(optimizer_state_dict)
         if scheduler_state_dict is not None:
