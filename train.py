@@ -31,7 +31,6 @@ if __name__ =='__main__':
     parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
     parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
     parser.add_argument("--resume", action='store_true', help="Find most recent run in output dir and resume from last checkpoint.")
-    parser.add_argument("--ffcv", action='store_true', help="Overwrite default dataloader with FFCV dataloaders.")
     parser.add_argument("--root", type=str, default='./', help="Root dir to save output directory within.")
     args = parser.parse_args()
     
@@ -283,22 +282,7 @@ if __name__ =='__main__':
     else:
         print("dataloaders get_mri_data")
         your_train_data, your_eval_data = dataloaders.get_mri_data(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-        print("dataloaders get_mri_data loaded!")
-    print("*"*10)
-    if args.ffcv:
-        import dataloaders_ffcv
-        if args.synth:
-            print("dataloaders_ffcv get_synth_ffcv")
-            ffcv_train, ffcv_val = dataloaders_ffcv.get_synth_ffcv(args.batch_size, args.workers)
-            print("dataloaders_ffcv get_synth_ffcv loaded!")
-        else:
-            print("dataloaders_ffcv get_mri_ffcv")
-            ffcv_train, ffcv_val = dataloaders_ffcv.get_mri_ffcv(args.batch_size, args.workers)
-            print("dataloaders_ffcv get_mri_ffcv loaded!")
-    else:
-        ffcv_train = None
-        ffcv_val = None
-    
+        print("dataloaders get_mri_data loaded!")    
     print("*"*10)
     dataset_output = your_train_data[0]
     print("train dataset_output.keys() : ",dataset_output.keys())
@@ -314,8 +298,6 @@ if __name__ =='__main__':
         epoch=epoch+1,
         optimizer_state_dict=optimizer_state,
         scheduler_state_dict=scheduler_state,
-        ffcv_train=ffcv_train,
-        ffcv_val=ffcv_val
     )
     
     wandb_cb._wandb.finish()
