@@ -165,8 +165,6 @@ class TrainingPipeline(Pipeline):
         epoch: int = 1,
         optimizer_state_dict = None,
         scheduler_state_dict = None,
-        ffcv_train = None,
-        ffcv_val = None
     ):
         """
         Launch the model training on the provided data.
@@ -190,11 +188,7 @@ class TrainingPipeline(Pipeline):
         else:
             train_dataset = train_data
 
-        if ffcv_train is None:
-            logger.info("Checking train dataset...")
-            self._check_dataset(train_dataset)
-        else:
-            train_dataset = DummyDataset()
+        train_dataset = DummyDataset()
 
         if eval_data is not None:
             if isinstance(eval_data, np.ndarray) or isinstance(eval_data, torch.Tensor):
@@ -205,11 +199,7 @@ class TrainingPipeline(Pipeline):
             else:
                 eval_dataset = eval_data
 
-            if ffcv_val is None:
-                logger.info("Checking eval dataset...")
-                self._check_dataset(eval_dataset)
-            else:
-                eval_dataset = DummyDataset()
+            eval_dataset = DummyDataset()
 
         else:
             eval_dataset = None
@@ -252,7 +242,6 @@ class TrainingPipeline(Pipeline):
                 eval_dataset=eval_dataset,
                 training_config=self.training_config,
                 callbacks=callbacks,
-                ffcv_device=(ffcv_train is not None),
             )
 
         self.trainer = trainer
@@ -260,14 +249,6 @@ class TrainingPipeline(Pipeline):
             self.trainer.optimizer.load_state_dict(optimizer_state_dict)
         if scheduler_state_dict is not None:
             self.trainer.scheduler.load_state_dict(scheduler_state_dict)
-
-        print("////"*10)
-        if ffcv_train is not None:
-            print("train_loader = ffcv_train")
-            self.trainer.train_loader = ffcv_train
-        if ffcv_val is not None:
-            print("val_loader = ffcv_val")
-            self.trainer.val_loader = ffcv_val
 
         print("epoch :",epoch)
         trainer.train(start_epoch=epoch)# pythae does not accept 
