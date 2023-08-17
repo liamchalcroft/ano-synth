@@ -5,21 +5,13 @@
 
 ```
 
-pip install -r requirements
+pip install -r requirements.txt
 
 
-sudo apt-get install libturbojpeg-dev
-sudo apt-get install libopencv-dev
+sudo apt-get install -y libturbojpeg-dev
+sudo apt-get install -y libopencv-dev
 
-git clone https://github.com/liamchalcroft/ffcv
-cd ffcv
-git pull
-pip install -q .
-cd ..
-
-# pip install pythae==0.1.1
-# install pythae from repository:
-pip install -q git+https://github.com/liamchalcroft/benchmark_VAE@ffcv
+pip install git+https://github.com/liamchalcroft/benchmark_VAE@ffcv
 
 ```
 ## Download Dataset

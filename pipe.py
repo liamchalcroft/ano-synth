@@ -188,7 +188,7 @@ class TrainingPipeline(Pipeline):
         else:
             train_dataset = train_data
 
-        train_dataset = DummyDataset()
+        #train_dataset = DummyDataset()
 
         if eval_data is not None:
             if isinstance(eval_data, np.ndarray) or isinstance(eval_data, torch.Tensor):
@@ -199,7 +199,7 @@ class TrainingPipeline(Pipeline):
             else:
                 eval_dataset = eval_data
 
-            eval_dataset = DummyDataset()
+            #eval_dataset = DummyDataset()
 
         else:
             eval_dataset = None
