@@ -24,12 +24,7 @@ class VAEDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx): # completely ignore given idx and instead iterate internally
-        try:
-            data = self.data[idx]
-        except:
-            print("idx : ",idx)
-            print("len(self.data) : ",len(self.data))
-            data = self.data[min(idx,len(self.data)-1)]
+        data = self.data.__getitem__(idx)
             
         return DatasetOutput(data=data["image"], label=data["label"])
 
@@ -58,6 +53,9 @@ def get_mri_data(device):
     #PersistanceDataset
     data_train = VAEDataset(mn.data.Dataset(subj_train, transform=transforms))#, cache_dir='tmp_data'))
     data_val = VAEDataset(mn.data.Dataset(subj_val, transform=transforms))#, cache_dir='tmp_data'))
+    print("Tamaño del conjunto de data_train:", len(data_train))
+ 
+    print("Tamaño del conjunto de data_val:", len(data_val))
 
     return data_train, data_val
 
@@ -86,7 +84,9 @@ def get_synth_data(device):
 
     data_train = VAEDataset(mn.data.PersistentDataset(subj_train, transform=transforms, cache_dir='tmp_data'))
     data_val = VAEDataset(mn.data.PersistentDataset(subj_val, transform=transforms, cache_dir='tmp_data'))
-
+    print("Tamaño del conjunto de data_train:", len(data_train))
+ 
+    print("Tamaño del conjunto de data_val:", len(data_val))
     return data_train, data_val
 
 
