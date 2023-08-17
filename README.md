@@ -11,8 +11,6 @@ pip install -r requirements.txt
 sudo apt-get install -y libturbojpeg-dev
 sudo apt-get install -y libopencv-dev
 
-git clone https://github.com/CristianLazoQuispe/ffcv.git
-
 pip install git+https://github.com/liamchalcroft/benchmark_VAE@ffcv
 
 ```
