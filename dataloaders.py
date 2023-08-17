@@ -14,6 +14,7 @@ img_list = glob.glob('oasis/*/aligned_norm.nii.gz')
 img_list_train, img_list_val = img_list[:int(0.8*len(img_list))], img_list[int(0.8*len(img_list)):]
 # mb_list_train, mb_list_val = mb_list[:int(0.8*len(mb_list))], mb_list[int(0.8*len(mb_list)):]
 
+print('Train Images: {}\nVal Images: {}'.format(len(img_list_train), len(img_list_val)))
 
 class VAEDataset(Dataset):
     def __init__(self, data):
