@@ -251,7 +251,6 @@ class TrainingPipeline(Pipeline):
                 eval_dataset=eval_dataset,
                 training_config=self.training_config,
                 callbacks=callbacks,
-                ffcv_device=(ffcv_train is not None),
             )
 
         self.trainer = trainer

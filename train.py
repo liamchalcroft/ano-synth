@@ -249,6 +249,4 @@ pipeline(
     epoch=epoch+1,
     optimizer_state_dict=optimizer_state,
     scheduler_state_dict=scheduler_state,
-    ffcv_train=ffcv_train,
-    ffcv_val=ffcv_val
 )
