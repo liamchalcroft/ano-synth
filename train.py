@@ -125,10 +125,18 @@ if __name__ =='__main__':
                 if torch.isnan(recon_loss_mean):
                     print("\n recon_loss nan")
                     print("recon_loss :",recon_loss_mean)
+                    print("recon_x")
+                    print(recon_x)
+                    print("x:")
+                    print(x)
                     recon_loss_mean= torch.tensor([1e-6], requires_grad=True)
                 if torch.isnan(KLD_mean):
                     print("\n KLD is nan")
                     print("KLD :",KLD_mean)
+                    print("recon_x")
+                    print(recon_x)
+                    print("x:")
+                    print(x)
                     KLD_mean= torch.tensor([1e-6], requires_grad=True)
 
                 return (recon_loss_mean + KLD_mean),recon_loss_mean, KLD_mean
@@ -263,17 +271,20 @@ if __name__ =='__main__':
         model=my_vae_model
     )
     
+    callbacks = []
+    
+    #"""
     wandb_cb = WandbCallback() 
     
     wandb_cb.setup(
     training_config=my_training_config, # training config
     model_config=my_vae_config, # model config
-    project_name="ano-synth", # specify your wandb project
-    entity_name="ff2023", # specify your wandb entity
+    project_name="ano-synth-2", # specify your wandb project
+    #entity_name="ff2023", # specify your wandb entity
     name = args.name,
     )
-    
     callbacks = [wandb_cb]
+    #"""
     
     print("*"*10)
     if args.synth:
