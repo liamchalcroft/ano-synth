@@ -31,7 +31,7 @@ class VAEDataset(Dataset):
             print("len(self.data) : ",len(self.data))
             data = self.data[min(idx,len(self.data)-1)]
             
-        return DatasetOutput(data=data["image"], label=data["label"])
+        return DatasetOutput(data=torch.Tensor(data["image"]), label=torch.Tensor(data["label"]))
 
 
 def get_mri_data(device):
