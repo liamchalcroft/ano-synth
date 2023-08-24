@@ -4,6 +4,9 @@ import wandb
 import numpy as np
 
 
+### loss functions ###
+
+
 def kld(mu, log_var):
     return -0.5 * (1 + log_var - mu.pow(2) - log_var.exp()).sum(-1)
 
@@ -58,7 +61,7 @@ def train_epoch_vae(train_loader, opt, model, epoch, device):
         epoch_loss += recons_loss.item()
         kld_loss += kl_loss.item()
         wandb.log({"train/recon_loss": recons_loss.item()})
-        wandb.log({"train/kld_loss": kld_loss.item()})
+        wandb.log({"train/kld_loss": kl_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
 
 def train_epoch_betavae(train_loader, opt, model, epoch, device, beta):
@@ -80,7 +83,7 @@ def train_epoch_betavae(train_loader, opt, model, epoch, device, beta):
         epoch_loss += recons_loss.item()
         kld_loss += kl_loss.item()
         wandb.log({"train/recon_loss": recons_loss.item()})
-        wandb.log({"train/kld_loss": kld_loss.item()})
+        wandb.log({"train/kld_loss": kl_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
 
 def train_epoch_gaussvae(train_loader, opt, model, epoch, device):
@@ -102,7 +105,7 @@ def train_epoch_gaussvae(train_loader, opt, model, epoch, device):
         epoch_loss += recons_loss.item()
         kld_loss += kl_loss.item()
         wandb.log({"train/recon_loss": recons_loss.item()})
-        wandb.log({"train/kld_loss": kld_loss.item()})
+        wandb.log({"train/kld_loss": kl_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
 
 def train_epoch_vqvae(train_loader, opt, model, epoch, device):
