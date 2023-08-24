@@ -11,6 +11,8 @@ def kld(mu, log_var):
     return -0.5 * (1 + log_var - mu.pow(2) - log_var.exp()).sum(-1)
 
 def l2(recon_x, x):
+    print(x.shape, x.min(), x.mean(), x.max())
+    print(recon_x.shape, recon_x.min(), recon_x.mean(), recon_x.max())
     return torch.square(x - recon_x).sum(-1)
 
 def gauss_l2(x_mu, x_sigma, x):
