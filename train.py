@@ -81,7 +81,7 @@ if __name__ =='__main__':
             spatial_dims=2,
             in_channels=1,
             out_channels=1,
-            latent_channels=128,
+            embedding_dim=128,
         ).to(device)
 
     if args.resume:
