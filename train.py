@@ -48,16 +48,41 @@ if __name__ =='__main__':
         print('Cached:   ', round(torch.cuda.memory_reserved(0)/1024**3,1), 'GB')
     
     if args.model == 'AE':
-        model = Autoencoder().to(device)
+        model = Autoencoder(
+            spatial_dims=2,
+            in_channels=1,
+            out_channels=1,
+            latent_channels=128,
+        ).to(device)
     elif args.model == 'VAE':
-        model = AutoencoderKL().to(device)
+        model = AutoencoderKL(
+            spatial_dims=2,
+            in_channels=1,
+            out_channels=1,
+            latent_channels=128,
+        ).to(device)
     elif args.model == 'BetaVAE':
-        model = AutoencoderKL().to(device)
+        model = AutoencoderKL(
+            spatial_dims=2,
+            in_channels=1,
+            out_channels=1,
+            latent_channels=128,
+        ).to(device)
         betas = list(range(args.beta_init, args.beta_final, args.epochs))
     elif args.model == 'GaussVAE':
-        model = GaussAutoencoderKL().to(device)
+        model = GaussAutoencoderKL(
+            spatial_dims=2,
+            in_channels=1,
+            out_channels=1,
+            latent_channels=128,
+        ).to(device)
     elif args.model == 'VQVAE':
-        model = VQVAE().to(device)
+        model = VQVAE(
+            spatial_dims=2,
+            in_channels=1,
+            out_channels=1,
+            latent_channels=128,
+        ).to(device)
 
     if args.resume:
         ckpts = glob.glob(os.path.join(args.root, args.name, 'checkpoint_epoch=*.pt'))
