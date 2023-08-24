@@ -52,6 +52,13 @@ if __name__ =='__main__':
             spatial_dims=2,
             in_channels=1,
             out_channels=1,
+            num_channels=(16,32,64,128),
+            num_res_blocks=2,
+            norm_num_groups=16,
+            with_encoder_nonlocal_attn=False,
+            with_decoder_nonlocal_attn=False,
+            attention_levels=(False,False,False,False),
+            use_convtranspose=False,
             latent_channels=128,
         ).to(device)
     elif args.model == 'VAE':
@@ -59,6 +66,13 @@ if __name__ =='__main__':
             spatial_dims=2,
             in_channels=1,
             out_channels=1,
+            num_channels=(16,32,64,128),
+            num_res_blocks=2,
+            norm_num_groups=16,
+            with_encoder_nonlocal_attn=False,
+            with_decoder_nonlocal_attn=False,
+            attention_levels=(False,False,False,False),
+            use_convtranspose=False,
             latent_channels=128,
         ).to(device)
     elif args.model == 'BetaVAE':
@@ -66,6 +80,13 @@ if __name__ =='__main__':
             spatial_dims=2,
             in_channels=1,
             out_channels=1,
+            num_channels=(16,32,64,128),
+            num_res_blocks=2,
+            norm_num_groups=16,
+            with_encoder_nonlocal_attn=False,
+            with_decoder_nonlocal_attn=False,
+            attention_levels=(False,False,False,False),
+            use_convtranspose=False,
             latent_channels=128,
         ).to(device)
         betas = list(range(args.beta_init, args.beta_final, args.epochs))
@@ -74,6 +95,13 @@ if __name__ =='__main__':
             spatial_dims=2,
             in_channels=1,
             out_channels=1,
+            num_channels=(16,32,64,128),
+            num_res_blocks=2,
+            norm_num_groups=16,
+            with_encoder_nonlocal_attn=False,
+            with_decoder_nonlocal_attn=False,
+            attention_levels=(False,False,False,False),
+            use_convtranspose=False,
             latent_channels=128,
         ).to(device)
     elif args.model == 'VQVAE':
@@ -81,6 +109,9 @@ if __name__ =='__main__':
             spatial_dims=2,
             in_channels=1,
             out_channels=1,
+            num_channels=(16,32,64,128),
+            num_res_layers=2,
+            num_res_channels=(16,32,64,128),
             embedding_dim=128,
         ).to(device)
 
