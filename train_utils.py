@@ -31,7 +31,7 @@ def train_epoch_ae(train_loader, opt, model, epoch, device):
         opt.zero_grad(set_to_none=True)
         with torch.autocast("cuda" if torch.cuda.is_available() else "cpu"):
             reconstruction = model(images)
-            recons_loss = l2(reconstruction.float(), images.float()).mean()
+            recons_loss = l2(reconstruction.float(), images.float()).sum()
         loss = recons_loss
         loss.backward()
         opt.step()
@@ -50,8 +50,8 @@ def train_epoch_vae(train_loader, opt, model, epoch, device):
         opt.zero_grad(set_to_none=True)
         with torch.autocast("cuda" if torch.cuda.is_available() else "cpu"):
             reconstruction, z_mu, z_sigma = model(images)
-            recons_loss = l2(reconstruction.float(), images.float()).mean()
-            kl_loss = kld(z_mu, 2*(z_sigma).log()).mean()
+            recons_loss = l2(reconstruction.float(), images.float()).sum()
+            kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
         loss = recons_loss + kl_loss
         loss.backward()
         opt.step()
@@ -72,8 +72,8 @@ def train_epoch_betavae(train_loader, opt, model, epoch, device, beta):
         opt.zero_grad(set_to_none=True)
         with torch.autocast("cuda" if torch.cuda.is_available() else "cpu"):
             reconstruction, z_mu, z_sigma = model(images)
-            recons_loss = l2(reconstruction.float(), images.float()).mean()
-            kl_loss = kld(z_mu, 2*(z_sigma).log()).mean()
+            recons_loss = l2(reconstruction.float(), images.float()).sum()
+            kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
         loss = recons_loss + beta * kl_loss
         loss.backward()
         opt.step()
@@ -94,8 +94,8 @@ def train_epoch_gaussvae(train_loader, opt, model, epoch, device):
         opt.zero_grad(set_to_none=True)
         with torch.autocast("cuda" if torch.cuda.is_available() else "cpu"):
             reconstruction, recon_sigma, z_mu, z_sigma = model(images)
-            recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float()).mean()
-            kl_loss = kld(z_mu, 2*(z_sigma).log()).mean()
+            recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float()).sum()
+            kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
         loss = recons_loss + kl_loss
         loss.backward()
         opt.step()
@@ -116,7 +116,7 @@ def train_epoch_vqvae(train_loader, opt, model, epoch, device):
         opt.zero_grad(set_to_none=True)
         with torch.autocast("cuda" if torch.cuda.is_available() else "cpu"):
             reconstruction, quantization_loss = model(images)
-            recons_loss = l2(reconstruction.float(), images.float()).mean()
+            recons_loss = l2(reconstruction.float(), images.float()).sum()
         loss = recons_loss + quantization_loss
         loss.backward()
         opt.step()
@@ -155,8 +155,8 @@ def val_epoch_vae(val_loader, model, device):
             if val_step == 1:
                 wandb.log({"input": wandb.Image(images[0,0,...,images.shape[-1]//2].cpu().numpy()),
                             "recon": wandb.Image(reconstruction[0,0,...,images.shape[-1]//2].cpu().numpy())})
-            recons_loss = l2(reconstruction.float(), images.float()).mean()
-            kl_loss = kld(z_mu, 2*(z_sigma).log()).mean()
+            recons_loss = l2(reconstruction.float(), images.float()).sum()
+            kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
             val_loss += recons_loss.item()
             kld_loss += kl_loss.item()
     wandb.log({"val/recon_loss": val_loss / val_step})
@@ -173,8 +173,8 @@ def val_epoch_vae(val_loader, model, device):
             if val_step == 1:
                 wandb.log({"input": wandb.Image(images[0,0,...,images.shape[-1]//2].cpu().numpy()),
                             "recon": wandb.Image(reconstruction[0,0,...,images.shape[-1]//2].cpu().numpy())})
-            recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float()).mean()
-            kl_loss = kld(z_mu, 2*(z_sigma).log()).mean()
+            recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float()).sum()
+            kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
             val_loss += recons_loss.item()
             kld_loss += kl_loss.item()
     wandb.log({"val/recon_loss": val_loss / val_step})
