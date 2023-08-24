@@ -1,6 +1,5 @@
 from torch.utils.data import DataLoader, Dataset
 from torch.nn.functional import interpolate
-from pythae.data.datasets import DatasetOutput
 import custom_monai as cmn
 import torch
 import torchio as tio
@@ -15,24 +14,6 @@ img_list_train, img_list_val = img_list[:int(0.8*len(img_list))], img_list[int(0
 # mb_list_train, mb_list_val = mb_list[:int(0.8*len(mb_list))], mb_list[int(0.8*len(mb_list)):]
 
 print('Train Images: {}\nVal Images: {}'.format(len(img_list_train), len(img_list_val)))
-
-class VAEDataset(Dataset):
-    def __init__(self, data):
-        self.data = data
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx): # completely ignore given idx and instead iterate internally
-        try:
-            data = self.data[idx]
-        except:
-            print("idx : ",idx)
-            print("len(self.data) : ",len(self.data))
-            data = self.data[min(idx,len(self.data)-1)]
-            
-        return DatasetOutput(data=torch.Tensor(data["image"]), label=torch.Tensor(data["label"]))
-
 
 def get_mri_data(device):
     transforms = mn.transforms.Compose([
@@ -55,8 +36,8 @@ def get_mri_data(device):
     subj_val = [{"image":img, "label":img.replace('norm','seg35')} for img in img_list_val]
     os.makedirs('tmp_data', exist_ok=True)
 
-    data_train = VAEDataset(mn.data.Dataset(subj_train, transform=transforms))#, cache_dir='tmp_data'))
-    data_val = VAEDataset(mn.data.Dataset(subj_val, transform=transforms))#, cache_dir='tmp_data'))
+    data_train = mn.data.PersistentDataset(subj_train, transform=transforms, cache_dir='tmp_data')
+    data_val = mn.data.PersistentDataset(subj_val, transform=transforms, cache_dir='tmp_data')
 
     return data_train, data_val
 
@@ -83,8 +64,8 @@ def get_synth_data(device):
     subj_val = [{"image":img, "label":img.replace('norm','seg35')} for img in img_list_val]
     os.makedirs('tmp_data', exist_ok=True)
 
-    data_train = VAEDataset(mn.data.PersistentDataset(subj_train, transform=transforms, cache_dir='tmp_data'))
-    data_val = VAEDataset(mn.data.PersistentDataset(subj_val, transform=transforms, cache_dir='tmp_data'))
+    data_train = mn.data.PersistentDataset(subj_train, transform=transforms, cache_dir='tmp_data')
+    data_val = mn.data.PersistentDataset(subj_val, transform=transforms, cache_dir='tmp_data')
 
     return data_train, data_val
 
