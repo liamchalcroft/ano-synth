@@ -34,9 +34,9 @@ def train_epoch_ae(train_loader, opt, model, epoch, device):
     for step, batch in progress_bar:
         images = batch["image"].to(device)
         opt.zero_grad(set_to_none=True)
-        with torch.autocast("cuda" if torch.cuda.is_available() else "cpu"):
-            reconstruction = model(images)
-            recons_loss = l2(reconstruction.float(), images.float()).sum()
+        # with torch.autocast("cuda" if torch.cuda.is_available() else "cpu"):
+        reconstruction = model(images)
+        recons_loss = l2(reconstruction.float(), images.float()).sum()
         loss = recons_loss
         loss.backward()
         opt.step()
