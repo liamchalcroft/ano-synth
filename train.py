@@ -46,8 +46,10 @@ if __name__ =='__main__':
         steps_predict=args.val_interval,
         optimizer_cls="AdamW",
         optimizer_params={"weight_decay": 0.05, "betas": (0.91, 0.995)},
-        scheduler_cls="ReduceLROnPlateau",
-        scheduler_params={"patience": 5, "factor": 0.5},
+        scheduler_cls="CosineAnnealingLR",
+        scheduler_params={"T_max":args.epochs, "eta_min":args.lr/(1e5)}
+        #scheduler_cls="ReduceLROnPlateau",
+        #scheduler_params={"patience": 5, "factor": 0.5},
         amp=args.amp,
     )
     
