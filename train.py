@@ -2,9 +2,12 @@ import argparse
 import os, glob
 from models import Autoencoder, AutoencoderKL, GaussAutoencoderKL, VQVAE
 import torch
-import numpy as np
+from torch.optim.lr_scheduler import LambdaLR
+from torch.utils.data import DataLoader
 import dataloaders
-import torch.nn.functional as F
+import train_utils
+import wandb
+
 
 if __name__ =='__main__':
     
@@ -14,245 +17,90 @@ if __name__ =='__main__':
     parser.add_argument(
         "--epochs", type=int, default=200, help="Number of epochs for training."
     )
-    parser.add_argument(
-        "--epoch_length", type=int, default=100, help="Number of iterations per epoch."
-    )
+    # parser.add_argument(
+    #     "--epoch_length", type=int, default=100, help="Number of iterations per epoch."
+    # )
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
     parser.add_argument(
         "--val_interval", type=int, default=2, help="Validation interval."
     )
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
-    parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
+    parser.add_argument("--beta_init", type=int, default=0, help="Initial beta (for BetaVAE only).")
+    parser.add_argument("--beta_final", type=int, default=20, help="Final beta (for BetaVAE only).")
+    # parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
     parser.add_argument("--synth", action='store_true', help="Use synthetic training data.")
     parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
-    parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
+    # parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
     parser.add_argument("--resume", action='store_true', help="Find most recent run in output dir and resume from last checkpoint.")
     parser.add_argument("--root", type=str, default='./', help="Root dir to save output directory within.")
     args = parser.parse_args()
     
-    if args.model == 'VAE':
-        from pythae.models import VAE, VAEConfig
-        Encoder = layers.Encoder_Conv_VAE 
-        Decoder = layers.Decoder_Conv_GaussVAE  if args.gauss else layers.Decoder_Conv_AE 
     
-        my_vae_config = VAEConfig(
-            input_dim=(1, 192, 192),
-            latent_dim=128 # match the 2020 Baur/Navab paper
-        )
+    os.makedirs(os.path.join(args.root, args.name), exist_ok=True)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print('Using device:', device)
+    print()
+    #Additional Info when using cuda
+    if device.type == 'cuda':
+        print(torch.cuda.get_device_name(0))
+        print('Memory Usage:')
+        print('Allocated:', round(torch.cuda.memory_allocated(0)/1024**3,1), 'GB')
+        print('Cached:   ', round(torch.cuda.memory_reserved(0)/1024**3,1), 'GB')
     
-        class GaussVAE(VAE):
-            def __init__(self, model_config, encoder, decoder):
-                super().__init__(model_config, encoder, decoder)
-    
-            def loss_function(self, recon_x, x, mu, log_var, z):
-    
-                x_mu = recon_x["mu"].reshape(x.shape[0], -1)
-                x_log_var = recon_x["log_var"].reshape(x.shape[0], -1)
-                x = x.reshape(x.shape[0], -1)
-    
-                x_log_var = torch.clamp(x_log_var,-10,1)
-                x_var = torch.exp(x_log_var)
-                squared_difference = torch.square(x - x_mu)
-                squared_diff_normed = torch.true_divide(squared_difference, x_var)
-                log_likelihood_per_dim = 0.5 * (np.log(2 * np.pi) + x_log_var + squared_diff_normed)
-                recon_loss = torch.sum(log_likelihood_per_dim, dim=1)
-    
-                KLD = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=-1)
-    
-                return (
-                    (recon_loss + KLD).mean(dim=0),
-                    recon_loss.mean(dim=0),
-                    KLD.mean(dim=0),
-                )
-    
-        class my_VAE(VAE):
-            def __init__(self, model_config, encoder, decoder):
-                super().__init__(model_config, encoder, decoder)
-                
-            def loss_function(self, recon_x, x, mu, log_var, z):
-    
-                if self.model_config.reconstruction_loss == "mse":
-    
-                    recon_loss = F.mse_loss(
-                        recon_x.reshape(x.shape[0], -1),
-                        x.reshape(x.shape[0], -1),
-                        reduction="none",
-                    ).sum(dim=-1)
-    
-                elif self.model_config.reconstruction_loss == "bce":
-    
-                    recon_loss = F.binary_cross_entropy(
-                        recon_x.reshape(x.shape[0], -1),
-                        x.reshape(x.shape[0], -1),
-                        reduction="none",
-                    ).sum(dim=-1)
-    
-                # var_x = torch.clip(torch.exp(logvar_x), min=1e-5)
-                # value = 0.5*torch.sum(
-                #    (1 * np.log(2.0 * np.pi))+ 
-                #    (1 * logvar_x)+
-                #    ((1 / var_x) * (x.view(-1, 64*64) - mu_x) ** 2.0)
-                #    ,dim=1,)
-                # loss_rec = torch.mean(value)
-                
-                log_var_clip = torch.clip(log_var.exp(), min=1e-5)
-                KLD = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var_clip, dim=-1)
-
-                recon_loss_mean = recon_loss.mean(dim=0)
-                KLD_mean  = KLD.mean(dim=0)
-                if torch.isnan(recon_loss_mean):
-                    print("\n recon_loss nan")
-                    print("recon_loss :",recon_loss_mean)
-                    recon_loss_mean= torch.tensor([1e-6], requires_grad=True)
-                if torch.isnan(KLD_mean):
-                    print("\n KLD is nan")
-                    print("KLD :",KLD_mean)
-                    KLD_mean= torch.tensor([1e-6], requires_grad=True)
-
-                return (recon_loss_mean + KLD_mean),recon_loss_mean, KLD_mean
-        
-        if args.gauss:
-            my_vae_model = GaussVAE(
-                model_config=my_vae_config,
-                encoder=Encoder(my_vae_config),
-                decoder=Decoder(my_vae_config),
-            )
-        else:
-            my_vae_model = my_VAE(
-                model_config=my_vae_config,
-                encoder=Encoder(my_vae_config),
-                decoder=Decoder(my_vae_config),
-            )
-    elif args.model == 'AE':
-        from pythae.models import AE, AEConfig
-        Encoder = layers.Encoder_Conv_AE 
-        Decoder = layers.Decoder_Conv_AE 
-    
-        my_vae_config = AEConfig(
-            input_dim=(1, 192, 192),
-            latent_dim=128 # match the 2020 Baur/Navab paper
-        )
-    
-        my_vae_model = AE(
-            model_config=my_vae_config,
-            encoder=Encoder(my_vae_config),
-            decoder=Decoder(my_vae_config),
-        )
+    if args.model == 'AE':
+        model = Autoencoder().to(device)
+    elif args.model == 'VAE':
+        model = AutoencoderKL().to(device)
     elif args.model == 'BetaVAE':
-        from pythae.models import BetaVAE, BetaVAEConfig
-        Encoder = layers.Encoder_Conv_VAE 
-        Decoder = layers.Decoder_Conv_GaussVAE  if args.gauss else layers.Decoder_Conv_AE 
-    
-        my_vae_config = BetaVAEConfig(
-            input_dim=(1, 192, 192),
-            latent_dim=128 # match the 2020 Baur/Navab paper
-        )
-    
-        class GaussBetaVAE(BetaVAE):
-            def __init__(self, model_config, encoder, decoder):
-                super().__init__(model_config, encoder, decoder)
-    
-            def loss_function(self, recon_x, x, mu, log_var, z):
-                x_mu = recon_x["mu"].reshape(x.shape[0], -1)
-                x_log_var = recon_x["log_var"].reshape(x.shape[0], -1)
-                x = x.reshape(x.shape[0], -1)
-    
-                x_log_var = torch.clamp(x_log_var,-10,1)
-                x_var = torch.exp(x_log_var)
-                squared_difference = torch.square(x - x_mu)
-                squared_diff_normed = torch.true_divide(squared_difference, x_var)
-                log_likelihood_per_dim = 0.5 * (np.log(2 * np.pi) + x_log_var + squared_diff_normed)
-                recon_loss = torch.sum(log_likelihood_per_dim, dim=1)
-    
-                KLD = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=-1)
-    
-                return (
-                    (recon_loss + self.beta * KLD).mean(dim=0),
-                    recon_loss.mean(dim=0),
-                    KLD.mean(dim=0),
-                )
-    
-        if args.gauss:
-            my_vae_model = GaussBetaVAE(
-                model_config=my_vae_config,
-                encoder=Encoder(my_vae_config),
-                decoder=Decoder(my_vae_config),
-            )
-        else:
-            my_vae_model = BetaVAE(
-                model_config=my_vae_config,
-                encoder=Encoder(my_vae_config),
-                decoder=Decoder(my_vae_config),
-            )
+        model = AutoencoderKL().to(device)
+        betas = list(range(args.beta_init, args.beta_final, args.epochs))
+    elif args.model == 'GaussVAE':
+        model = GaussAutoencoderKL().to(device)
     elif args.model == 'VQVAE':
-        from pythae.models import VQVAE, VQVAEConfig
-        Encoder = layers.Encoder_Conv_AE 
-        Decoder = layers.Decoder_Conv_AE 
-    
-        my_vae_config = VQVAEConfig(
-            input_dim=(1, 192, 192),
-            latent_dim=128 # match the 2020 Baur/Navab paper
-        )
-    
-        my_vae_model = VQVAE(
-            model_config=my_vae_config,
-            encoder=Encoder(my_vae_config),
-            decoder=Decoder(my_vae_config),
-        )
-    elif args.model == 'RHVAE':
-        from pythae.models import RHVAE, RHVAEConfig
-        Encoder = layers.Encoder_Conv_VAE 
-        Decoder = layers.Decoder_Conv_AE 
-    
-        my_vae_config = RHVAEConfig(
-            input_dim=(1, 192, 192),
-            latent_dim=128 # match the 2020 Baur/Navab paper
-        )
-    
-        my_vae_model = RHVAE(
-            model_config=my_vae_config,
-            encoder=Encoder(my_vae_config),
-            decoder=Decoder(my_vae_config),
-        )
-    else:
-        raise ExceptionError('Invalid argument provided for --model flag. Please choose from [VAE, AE, BetaVAE, VQVAE, RHVAE].')
-    
-    # import torch
-    # print(my_vae_model.decoder(torch.ones(1,128))['reconstruction'].shape)
-    # exit()
-    
-    
+        model = VQVAE().to(device)
+
     if args.resume:
-        model_paths = glob.glob(os.path.join(args.root, args.name, '*', 'checkpoint_epoch_*'))
-        model_paths = [{'Epoch':int(pth.split('_')[-1]), 'Path': pth} for pth in model_paths]
-        model_path = sorted(model_paths, key=lambda d: d['Epoch'])[-1]
-        print('Resuming training from folder {} at epoch #{}.'.format(model_path['Path'].split('/')[-2], model_path['Epoch']))
-        my_vae_model.load_state_dict(torch.load(os.path.join(model_path['Path'],'model.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))['model_state_dict'])
-        epoch = model_path['Epoch']
-        optimizer_state = torch.load(os.path.join(model_path['Path'],'optimizer.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-        scheduler_state = torch.load(os.path.join(model_path['Path'],'scheduler.pt'), map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+        ckpts = glob.glob(os.path.join(args.root, args.name, 'checkpoint_epoch=*.pt'))
+        ckpts = [{'path': p, 'epoch': int(p.split('_')[-1][:-3].split('=')[-1])} for p in ckpts]
+        ckpt = sorted(ckpts, key=lambda d: d['epoch'])[-1]
+        print('Resuming from epoch #{}'.format(ckpt['epoch']))
+        print(torch.load(ckpt['path'], map_location=device)["wandb"])
+
+    wandb.init(
+        project="ano-synth",
+        entity="ff2023",
+        save_code=True,
+        name=args.name,
+        settings=wandb.Settings(start_method="fork"),
+        resume="must" if args.resume else None,
+        id=torch.load(ckpt['path'], map_location=device)["wandb"] if args.resume else None,
+    )
+    if not args.resume:
+        wandb.config.update(args)
+    wandb.watch(model)
+
+    opt = torch.optim.Adam(model.parameters(), args.lr)
+    def lambda1(epoch):
+        return (1 - epoch / args.epochs) ** 0.9
+    lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
+
+    class WandBID:
+        def __init__(self, wandb_id):
+            self.wandb_id = wandb_id
+
+        def state_dict(self):
+            return self.wandb_id
+        
+    # Try to load most recent weight
+    if args.resume:
+        checkpoint = torch.load(ckpt['path'], map_location=device) 
+        model.load_state_dict(checkpoint["net"])
+        opt.load_state_dict(checkpoint["opt"])
+        lr_scheduler.load_state_dict(checkpoint["lr"])
+        start_epoch = int(ckpt['epoch'])
     else:
-        epoch = 0
-        optimizer_state = None
-        scheduler_state = None
-    
-    pipeline = TrainingPipeline(
-        training_config=my_training_config,
-        model=my_vae_model
-    )
-    
-    wandb_cb = WandbCallback() 
-    
-    wandb_cb.setup(
-    training_config=my_training_config, # training config
-    model_config=my_vae_config, # model config
-    project_name="ano-synth", # specify your wandb project
-    entity_name="ff2023", # specify your wandb entity
-    name = args.name,
-    )
-    
-    callbacks = [wandb_cb]
-    
+        start_epoch = 0
+        
     print("*"*10)
     if args.synth:
         print("dataloaders get_synth_data")
@@ -268,16 +116,43 @@ if __name__ =='__main__':
     
     dataset_output = your_eval_data[0]
     print("val dataset_output.keys() : ",dataset_output.keys())
-    
-    print("*"*10)
-    pipeline(
-        train_data=your_train_data,
-        eval_data=your_eval_data,
-        callbacks=callbacks,
-        epoch=epoch+1,
-        optimizer_state_dict=optimizer_state,
-        scheduler_state_dict=scheduler_state,
-    )
-    
-    
-    wandb_cb._wandb.finish()
+
+    train_loader = DataLoader(your_train_data, batch_size=args.batch_size, shuffle=True)
+    val_loader = DataLoader(your_eval_data, batch_size=args.batch_size, shuffle=True)
+
+    for epoch in range(start_epoch, args.epochs):
+        model.train()
+        if args.model == 'AE':
+            train_utils.train_epoch_ae(train_loader, opt, model, epoch, device)
+        elif args.model == 'VAE':
+            train_utils.train_epoch_vae(train_loader, opt, model, epoch, device)
+        elif args.model == 'BetaVAE':
+            train_utils.train_epoch_betavae(train_loader, opt, model, epoch, device, betas[epoch])
+        elif args.model == 'GaussVAE':
+            train_utils.train_epoch_gaussvae(train_loader, opt, model, epoch, device)
+        elif args.model == 'VQVAE':
+            train_utils.train_epoch_vqvae(train_loader, opt, model, epoch, device)
+        lr_scheduler.step()
+
+        if (epoch + 1) % args.val_interval == 0:
+            model.eval()
+            if args.model == 'AE':
+                train_utils.val_epoch_ae(val_loader, device)
+            elif args.model == 'VAE':
+                train_utils.val_epoch_vae(val_loader, device)
+            elif args.model == 'BetaVAE':
+                train_utils.val_epoch_vae(val_loader, device)
+            elif args.model == 'GaussVAE':
+                train_utils.val_epoch_gaussvae(val_loader, device)
+            elif args.model == 'VQVAE':
+                train_utils.val_epoch_vqvae(val_loader, device)
+            torch.save(
+                {
+                    "net": model.state_dict(),
+                    "opt": opt.state_dict(),
+                    "lr": lr_scheduler.state_dict(),
+                    "wandb": WandBID(wandb.run.id).state_dict()
+                },
+                os.path.join(args.logdir, args.name,'checkpoint_epoch={}.pt'.format(epoch)))
+            os.path.join(args.logdir, args.name)
+            
