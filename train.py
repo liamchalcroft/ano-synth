@@ -86,10 +86,14 @@ if __name__ =='__main__':
 
     if args.resume:
         ckpts = glob.glob(os.path.join(args.root, args.name, 'checkpoint_epoch=*.pt'))
-        ckpts = [{'path': p, 'epoch': int(p.split('_')[-1][:-3].split('=')[-1])} for p in ckpts]
-        ckpt = sorted(ckpts, key=lambda d: d['epoch'])[-1]
-        print('Resuming from epoch #{}'.format(ckpt['epoch']))
-        print(torch.load(ckpt['path'], map_location=device)["wandb"])
+        if len(ckpts) == 0:
+            args.resume = False
+            print('No checkpoints found. Beginning from epoch #0')
+        else:
+            ckpts = [{'path': p, 'epoch': int(p.split('_')[-1][:-3].split('=')[-1])} for p in ckpts]
+            ckpt = sorted(ckpts, key=lambda d: d['epoch'])[-1]
+            print('Resuming from epoch #{}'.format(ckpt['epoch']))
+            print(torch.load(ckpt['path'], map_location=device)["wandb"])
 
     wandb.init(
         project="ano-synth",
