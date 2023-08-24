@@ -141,8 +141,8 @@ def val_epoch_ae(val_loader, model, device):
             with torch.autocast("cuda" if torch.cuda.is_available() else "cpu"):
                 reconstruction = model(images)
             if val_step == 1:
-                wandb.log({"input": wandb.Image(images[0,0,...,images.shape[-1]//2].cpu().numpy()),
-                            "recon": wandb.Image(reconstruction[0,0,...,images.shape[-1]//2].cpu().numpy())})
+                wandb.log({"input": wandb.Image(images[0,0].cpu().numpy()),
+                            "recon": wandb.Image(reconstruction[0,0].cpu().numpy())})
             recons_loss = l2(reconstruction.float(), images.float())
             val_loss += recons_loss.item()
     wandb.log({"val/recon_loss": val_loss / val_step})
@@ -156,8 +156,8 @@ def val_epoch_vae(val_loader, model, device):
             with torch.autocast("cuda" if torch.cuda.is_available() else "cpu"):
                 reconstruction, z_mu, z_sigma = model(images)
             if val_step == 1:
-                wandb.log({"input": wandb.Image(images[0,0,...,images.shape[-1]//2].cpu().numpy()),
-                            "recon": wandb.Image(reconstruction[0,0,...,images.shape[-1]//2].cpu().numpy())})
+                wandb.log({"input": wandb.Image(images[0,0].cpu().numpy()),
+                            "recon": wandb.Image(reconstruction[0,0].cpu().numpy())})
             recons_loss = l2(reconstruction.float(), images.float()).sum()
             kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
             val_loss += recons_loss.item()
@@ -174,8 +174,8 @@ def val_epoch_vae(val_loader, model, device):
             with torch.autocast("cuda" if torch.cuda.is_available() else "cpu"):
                 reconstruction, recon_sigma, z_mu, z_sigma = model(images)
             if val_step == 1:
-                wandb.log({"input": wandb.Image(images[0,0,...,images.shape[-1]//2].cpu().numpy()),
-                            "recon": wandb.Image(reconstruction[0,0,...,images.shape[-1]//2].cpu().numpy())})
+                wandb.log({"input": wandb.Image(images[0,0].cpu().numpy()),
+                            "recon": wandb.Image(reconstruction[0,0].cpu().numpy())})
             recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float()).sum()
             kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
             val_loss += recons_loss.item()
@@ -192,8 +192,8 @@ def val_epoch_vqvae(val_loader, model, device):
             with torch.autocast("cuda" if torch.cuda.is_available() else "cpu"):
                 reconstruction, quantization_loss = model(images)
             if val_step == 1:
-                wandb.log({"input": wandb.Image(images[0,0,...,images.shape[-1]//2].cpu().numpy()),
-                            "recon": wandb.Image(reconstruction[0,0,...,images.shape[-1]//2].cpu().numpy())})
+                wandb.log({"input": wandb.Image(images[0,0].cpu().numpy()),
+                            "recon": wandb.Image(reconstruction[0,0].cpu().numpy())})
             recons_loss = l2(reconstruction.float(), images.float())
             val_loss += recons_loss.item()
             val_quant += quantization_loss.item()
