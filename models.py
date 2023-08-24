@@ -287,7 +287,7 @@ class VQVAEResidualUnit(nn.Module):
         return torch.nn.functional.relu(x + self.conv2(self.conv1(x)), True)
 
 
-class Encoder(nn.Module):
+class VQVAEEncoder(nn.Module):
     """
     Encoder module for VQ-VAE.
 
@@ -377,7 +377,7 @@ class Encoder(nn.Module):
         return x
 
 
-class Decoder(nn.Module):
+class VQVAEDecoder(nn.Module):
     """
     Decoder module for VQ-VAE.
 
@@ -583,7 +583,7 @@ class VQVAE(nn.Module):
         self.num_res_layers = num_res_layers
         self.num_res_channels = num_res_channels
 
-        self.encoder = Encoder(
+        self.encoder = VQVAEEncoder(
             spatial_dims=spatial_dims,
             in_channels=in_channels,
             out_channels=embedding_dim,
@@ -595,7 +595,7 @@ class VQVAE(nn.Module):
             act=act,
         )
 
-        self.decoder = Decoder(
+        self.decoder = VQVAEDecoder(
             spatial_dims=spatial_dims,
             in_channels=embedding_dim,
             out_channels=out_channels,
