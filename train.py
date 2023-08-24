@@ -1,13 +1,9 @@
 import argparse
 import os, glob
-from pipe import TrainingPipeline, WandbCallback
-from pythae.models import VAE, AE, BetaVAE, VQVAE, RHVAE
-from pythae.trainers import BaseTrainerConfig
+from models import Autoencoder, AutoencoderKL, GaussAutoencoderKL, VQVAE
 import torch
 import numpy as np
-# from pythae.trainers.training_callbacks import WandbCallback
 import dataloaders
-import layers
 import torch.nn.functional as F
 
 if __name__ =='__main__':
@@ -33,25 +29,6 @@ if __name__ =='__main__':
     parser.add_argument("--resume", action='store_true', help="Find most recent run in output dir and resume from last checkpoint.")
     parser.add_argument("--root", type=str, default='./', help="Root dir to save output directory within.")
     args = parser.parse_args()
-    
-    my_training_config = BaseTrainerConfig(
-        output_dir=os.path.join(args.root, args.name),
-        num_epochs=args.epochs,
-        learning_rate=args.lr,
-        per_device_train_batch_size=args.batch_size,
-        per_device_eval_batch_size=args.batch_size,
-        train_dataloader_num_workers=args.workers,
-        eval_dataloader_num_workers=args.workers,
-        steps_saving=args.val_interval,
-        steps_predict=args.val_interval,
-        optimizer_cls="AdamW",
-        optimizer_params={"weight_decay": 0.05, "betas": (0.91, 0.995)},
-        scheduler_cls="CosineAnnealingLR",
-        scheduler_params={"T_max":args.epochs, "eta_min":args.lr/(1e5)}
-        #scheduler_cls="ReduceLROnPlateau",
-        #scheduler_params={"patience": 5, "factor": 0.5},
-        amp=args.amp,
-    )
     
     if args.model == 'VAE':
         from pythae.models import VAE, VAEConfig
