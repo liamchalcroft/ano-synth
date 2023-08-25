@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import torch
 import wandb
+import math
 import numpy as np
 from contextlib import nullcontext
 from torchvision.utils import make_grid
@@ -27,8 +28,7 @@ def gauss_l2(x_mu, x_sigma, x):
     x_var = x_sigma ** 2
     x_log_var = x_var.log()
     squared_diff_normed = torch.true_divide(squared_difference, x_var)
-    print(type(squared_diff_normed))
-    return 0.5 * (np.log(2 * np.pi) + x_log_var + squared_diff_normed).mean(-1)
+    return 0.5 * (torch.log(2 * torch.tensor(math.pi, device=x.device)) + x_log_var + squared_diff_normed).mean(-1)
 
 
 ### training stuff ###
