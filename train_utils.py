@@ -200,8 +200,8 @@ def val_epoch_ae(val_loader, model, device, amp, epoch):
             with ctx:
                 reconstruction = model(images)
             if val_step < 16:
-                inputs.append(images[0,0].cpu())
-                recons.append(reconstruction[0,0].cpu())
+                inputs.append(images[0].cpu())
+                recons.append(reconstruction[0].cpu())
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
@@ -226,8 +226,8 @@ def val_epoch_vae(val_loader, model, device, amp, epoch):
             with ctx:
                 reconstruction, z_mu, z_sigma = model(images)
             if val_step < 16:
-                inputs.append(images[0,0].cpu())
-                recons.append(reconstruction[0,0].cpu())
+                inputs.append(images[0].cpu())
+                recons.append(reconstruction[0].cpu())
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
@@ -255,8 +255,8 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
             with ctx:
                 reconstruction, recon_sigma, z_mu, z_sigma = model(images)
             if val_step < 16:
-                inputs.append(images[0,0].cpu())
-                recons.append(reconstruction[0,0].cpu())
+                inputs.append(images[0].cpu())
+                recons.append(reconstruction[0].cpu())
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
@@ -284,8 +284,8 @@ def val_epoch_vqvae(val_loader, model, device, amp, epoch):
             with ctx:
                 reconstruction, quantization_loss = model(images)
             if val_step < 16:
-                inputs.append(images[0,0].cpu())
-                recons.append(reconstruction[0,0].cpu())
+                inputs.append(images[0].cpu())
+                recons.append(reconstruction[0].cpu())
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
