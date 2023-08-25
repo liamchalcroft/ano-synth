@@ -231,8 +231,8 @@ def val_epoch_vae(val_loader, model, device, amp, epoch):
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
-                wandb.log({"input": wandb.Image(grid_inputs[0].numpy()),
-                            "recon": wandb.Image(grid_recons[0].numpy())})
+                wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
+                                            wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
             recons_loss = l2(reconstruction.float(), images.float()).sum()
             kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
             val_loss += recons_loss.item()
@@ -246,6 +246,7 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
     kld_loss = 0
     inputs = []
     recons = []
+    sigmas = []
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
     progress_bar = tqdm(enumerate(val_loader), total=len(val_loader), ncols=110)
     progress_bar.set_description(f"[Validation] Epoch {epoch}")
@@ -257,11 +258,14 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
             if val_step < 16:
                 inputs.append(images[0].cpu())
                 recons.append(reconstruction[0].cpu())
+                sigmas.append(recon_sigma[0].cpu())
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
-                wandb.log({"input": wandb.Image(grid_inputs[0].numpy()),
-                            "recon": wandb.Image(grid_recons[0].numpy())})
+                grid_sigmas = make_grid(sigmas, nrow=4, padding=5, normalize=True, scale_each=True)
+                wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
+                                            wandb.Image(grid_recons[0].numpy(), caption="Reconstructions"),
+                                            wandb.Image(grid_sigmas[0].numpy(), caption="Uncertanties")]})
             recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float()).sum()
             kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
             val_loss += recons_loss.item()
@@ -289,8 +293,8 @@ def val_epoch_vqvae(val_loader, model, device, amp, epoch):
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
-                wandb.log({"input": wandb.Image(grid_inputs[0].numpy()),
-                            "recon": wandb.Image(grid_recons[0].numpy())})
+                wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
+                                            wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
             recons_loss = l2(reconstruction.float(), images.float()).sum()
             val_loss += recons_loss.item()
             val_quant += quantization_loss.item()
