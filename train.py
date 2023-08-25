@@ -14,23 +14,17 @@ if __name__ =='__main__':
     parser = argparse.ArgumentParser(argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--name", type=str, help="Name of WandB run.")
     parser.add_argument("--model", type=str, help="Model to use. Full list of options available in Pythae docs.")
-    parser.add_argument(
-        "--epochs", type=int, default=200, help="Number of epochs for training."
-    )
-    # parser.add_argument(
-    #     "--epoch_length", type=int, default=100, help="Number of iterations per epoch."
-    # )
+    parser.add_argument("--epochs", type=int, default=200, help="Number of epochs for training.")
+    # parser.add_argument("--epoch_length", type=int, default=100, help="Number of iterations per epoch.")
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
-    parser.add_argument(
-        "--val_interval", type=int, default=2, help="Validation interval."
-    )
+    parser.add_argument("--val_interval", type=int, default=2, help="Validation interval.")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
     parser.add_argument("--beta_init", type=int, default=0, help="Initial beta (for BetaVAE only).")
     parser.add_argument("--beta_final", type=int, default=20, help="Final beta (for BetaVAE only).")
     # parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
     parser.add_argument("--synth", action='store_true', help="Use synthetic training data.")
     parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
-    # parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
+    parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
     parser.add_argument("--resume", action='store_true', help="Find most recent run in output dir and resume from last checkpoint.")
     parser.add_argument("--root", type=str, default='./', help="Root dir to save output directory within.")
     args = parser.parse_args()
@@ -174,29 +168,29 @@ if __name__ =='__main__':
     for epoch in range(start_epoch, args.epochs):
         model.train()
         if args.model == 'AE':
-            train_utils.train_epoch_ae(train_loader, opt, model, epoch, device)
+            train_utils.train_epoch_ae(train_loader, opt, model, epoch, device, args.amp)
         elif args.model == 'VAE':
-            train_utils.train_epoch_vae(train_loader, opt, model, epoch, device)
+            train_utils.train_epoch_vae(train_loader, opt, model, epoch, device, args.amp)
         elif args.model == 'BetaVAE':
-            train_utils.train_epoch_betavae(train_loader, opt, model, epoch, device, betas[epoch])
+            train_utils.train_epoch_betavae(train_loader, opt, model, epoch, device, betas[epoch], args.amp)
         elif args.model == 'GaussVAE':
-            train_utils.train_epoch_gaussvae(train_loader, opt, model, epoch, device)
+            train_utils.train_epoch_gaussvae(train_loader, opt, model, epoch, device, args.amp)
         elif args.model == 'VQVAE':
-            train_utils.train_epoch_vqvae(train_loader, opt, model, epoch, device)
+            train_utils.train_epoch_vqvae(train_loader, opt, model, epoch, device, args.amp)
         lr_scheduler.step()
 
         if (epoch + 1) % args.val_interval == 0:
             model.eval()
             if args.model == 'AE':
-                train_utils.val_epoch_ae(val_loader, model, device)
+                train_utils.val_epoch_ae(val_loader, model, device, args.amp)
             elif args.model == 'VAE':
-                train_utils.val_epoch_vae(val_loader, model, device)
+                train_utils.val_epoch_vae(val_loader, model, device, args.amp)
             elif args.model == 'BetaVAE':
-                train_utils.val_epoch_vae(val_loader, model, device)
+                train_utils.val_epoch_vae(val_loader, model, device, args.amp)
             elif args.model == 'GaussVAE':
-                train_utils.val_epoch_gaussvae(val_loader, model, device)
+                train_utils.val_epoch_gaussvae(val_loader, model, device, args.amp)
             elif args.model == 'VQVAE':
-                train_utils.val_epoch_vqvae(val_loader, model, device)
+                train_utils.val_epoch_vqvae(val_loader, model, device, args.amp)
             torch.save(
                 {
                     "net": model.state_dict(),
