@@ -263,7 +263,7 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
-                grid_sigmas = make_grid(sigmas, nrow=4, padding=5, normalize=True, scale_each=True)
+                grid_sigmas = make_grid(sigmas, nrow=4, padding=5, normalize=True, scale_each=False)
                 wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
                                             wandb.Image(grid_recons[0].numpy(), caption="Reconstructions"),
                                             wandb.Image(grid_sigmas[0].numpy(), caption="Uncertanties")]})
