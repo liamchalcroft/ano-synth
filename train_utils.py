@@ -5,6 +5,7 @@ import math
 import numpy as np
 from contextlib import nullcontext
 from torchvision.utils import make_grid
+from torch.cuda.amp import GradScaler
 
 
 ### loss functions ###
@@ -37,7 +38,11 @@ def gauss_l2(x_mu, x_sigma, x):
 def train_epoch_ae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
     model.train()
     epoch_loss = 0
-    ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
+    if amp:
+        ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu")
+        scaler = GradScaler()
+    else:
+        ctx = nullcontext()
     progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
     progress_bar.set_description(f"Epoch {epoch}")
     if train_iter is None:
@@ -53,9 +58,17 @@ def train_epoch_ae(train_iter, epoch_length, train_loader, opt, model, epoch, de
         with ctx:
             reconstruction = model(images)
             recons_loss = l2(reconstruction.float(), images.float())
-        loss = recons_loss.sum()
-        loss.backward()
-        opt.step()
+            loss = recons_loss.sum()
+        if amp:
+            scaler.scale(loss).backward()
+            scaler.unscale_(opt)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            scaler.step(opt)
+            scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            opt.step()
         epoch_loss += recons_loss.sum().item()
         wandb.log({"train/recon_loss": recons_loss.sum().item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1)})
@@ -65,7 +78,11 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
     model.train()
     epoch_loss = 0
     kld_loss = 0
-    ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
+    if amp:
+        ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu")
+        scaler = GradScaler()
+    else:
+        ctx = nullcontext()
     progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
     progress_bar.set_description(f"Epoch {epoch}")
     if train_iter is None:
@@ -82,9 +99,17 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
             reconstruction, z_mu, z_sigma = model(images)
             recons_loss = l2(reconstruction.float(), images.float())
             kl_loss = kld(z_mu, 2*(z_sigma).log())
-        loss = (recons_loss + kl_loss).sum()
-        loss.backward()
-        opt.step()
+            loss = (recons_loss + kl_loss).sum()
+        if amp:
+            scaler.scale(loss).backward()
+            scaler.unscale_(opt)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            scaler.step(opt)
+            scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            opt.step()
         epoch_loss += recons_loss.sum().item()
         kld_loss += kl_loss.sum().item()
         wandb.log({"train/recon_loss": recons_loss.sum().item()})
@@ -96,7 +121,11 @@ def train_epoch_betavae(train_iter, epoch_length, train_loader, opt, model, epoc
     model.train()
     epoch_loss = 0
     kld_loss = 0
-    ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
+    if amp:
+        ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu")
+        scaler = GradScaler()
+    else:
+        ctx = nullcontext()
     progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
     progress_bar.set_description(f"Epoch {epoch}")
     if train_iter is None:
@@ -113,9 +142,17 @@ def train_epoch_betavae(train_iter, epoch_length, train_loader, opt, model, epoc
             reconstruction, z_mu, z_sigma = model(images)
             recons_loss = l2(reconstruction.float(), images.float())
             kl_loss = kld(z_mu, 2*(z_sigma).log())
-        loss = (recons_loss + beta * kl_loss).sum()
-        loss.backward()
-        opt.step()
+            loss = (recons_loss + beta * kl_loss).sum()
+        if amp:
+            scaler.scale(loss).backward()
+            scaler.unscale_(opt)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            scaler.step(opt)
+            scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            opt.step()
         epoch_loss += recons_loss.sum().item()
         kld_loss += kl_loss.sum().item()
         wandb.log({"train/recon_loss": recons_loss.sum().item()})
@@ -127,7 +164,11 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
     model.train()
     epoch_loss = 0
     kld_loss = 0
-    ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
+    if amp:
+        ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu")
+        scaler = GradScaler()
+    else:
+        ctx = nullcontext()
     progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
     progress_bar.set_description(f"[Training] Epoch {epoch}")
     if train_iter is None:
@@ -144,9 +185,17 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
             reconstruction, recon_sigma, z_mu, z_sigma = model(images)
             recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float())
             kl_loss = kld(z_mu, 2*z_sigma.log())
-        loss = (recons_loss + kl_loss).sum()
-        loss.backward()
-        opt.step()
+            loss = (recons_loss + kl_loss).sum()
+        if amp:
+            scaler.scale(loss).backward()
+            scaler.unscale_(opt)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            scaler.step(opt)
+            scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            opt.step()
         epoch_loss += recons_loss.sum().item()
         kld_loss += kl_loss.sum().item()
         wandb.log({"train/recon_loss": recons_loss.sum().item()})
@@ -158,7 +207,11 @@ def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch,
     model.train()
     epoch_loss = 0
     quant_loss = 0
-    ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
+    if amp:
+        ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu")
+        scaler = GradScaler()
+    else:
+        ctx = nullcontext()
     progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
     progress_bar.set_description(f"Epoch {epoch}")
     if train_iter is None:
@@ -174,9 +227,17 @@ def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch,
         with ctx:
             reconstruction, quantization_loss = model(images)
             recons_loss = l2(reconstruction.float(), images.float())
-        loss = recons_loss.sum() + quantization_loss
-        loss.backward()
-        opt.step()
+            loss = recons_loss.sum() + quantization_loss
+        if amp:
+            scaler.scale(loss).backward()
+            scaler.unscale_(opt)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            scaler.step(opt)
+            scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            opt.step()
         epoch_loss += recons_loss.sum().item()
         quant_loss += quantization_loss.item()
         wandb.log({"train/recon_loss": recons_loss.sum().item()})
