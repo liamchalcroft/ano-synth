@@ -205,8 +205,8 @@ def val_epoch_ae(val_loader, model, device, amp, epoch):
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
-                wandb.log({"input": wandb.Image(grid_inputs[0].numpy()),
-                            "recon": wandb.Image(grid_recons[0].numpy())})
+                wandb.log({"val/examples": wandb.Image(grid_inputs[0].numpy(), caption="Real images")})
+                wandb.log({"val/examples": wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")})
             recons_loss = l2(reconstruction.float(), images.float()).sum()
             val_loss += recons_loss.item()
     progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1)})
