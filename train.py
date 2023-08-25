@@ -183,15 +183,15 @@ if __name__ =='__main__':
         if (epoch + 1) % args.val_interval == 0:
             model.eval()
             if args.model == 'AE':
-                train_utils.val_epoch_ae(val_loader, model, device, args.amp)
+                train_utils.val_epoch_ae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'VAE':
-                train_utils.val_epoch_vae(val_loader, model, device, args.amp)
+                train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'BetaVAE':
-                train_utils.val_epoch_vae(val_loader, model, device, args.amp)
+                train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'GaussVAE':
-                train_utils.val_epoch_gaussvae(val_loader, model, device, args.amp)
+                train_utils.val_epoch_gaussvae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'VQVAE':
-                train_utils.val_epoch_vqvae(val_loader, model, device, args.amp)
+                train_utils.val_epoch_vqvae(val_loader, model, device, args.amp, epoch)
             torch.save(
                 {
                     "net": model.state_dict(),
