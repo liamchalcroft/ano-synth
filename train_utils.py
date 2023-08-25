@@ -57,7 +57,7 @@ def train_epoch_ae(train_iter, epoch_length, train_loader, opt, model, epoch, de
         epoch_loss += recons_loss.item()
         wandb.log({"train/recon_loss": recons_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1)})
-        return train_iter
+    return train_iter
 
 def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
     model.train()
@@ -88,7 +88,7 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
         wandb.log({"train/recon_loss": recons_loss.item()})
         wandb.log({"train/kld_loss": kl_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
-        return train_iter
+    return train_iter
 
 def train_epoch_betavae(train_iter, epoch_length, train_loader, opt, model, epoch, device, beta, amp):
     model.train()
@@ -119,7 +119,7 @@ def train_epoch_betavae(train_iter, epoch_length, train_loader, opt, model, epoc
         wandb.log({"train/recon_loss": recons_loss.item()})
         wandb.log({"train/kld_loss": kl_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
-        return train_iter
+    return train_iter
 
 def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
     model.train()
@@ -150,7 +150,7 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
         wandb.log({"train/recon_loss": recons_loss.item()})
         wandb.log({"train/kld_loss": kl_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
-        return train_iter
+    return train_iter
 
 def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
     model.train()
@@ -180,7 +180,7 @@ def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch,
         wandb.log({"train/recon_loss": recons_loss.item()})
         wandb.log({"train/quant_loss": quantization_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "quantization_loss": quant_loss / (step + 1)})
-        return train_iter
+    return train_iter
 
 
 ### validation stuff ###
