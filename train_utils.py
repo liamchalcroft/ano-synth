@@ -51,8 +51,8 @@ def train_epoch_ae(train_iter, epoch_length, train_loader, opt, model, epoch, de
         opt.zero_grad(set_to_none=True)
         with ctx:
             reconstruction = model(images)
-            recons_loss = l2(reconstruction.float(), images.float()).sum()
-        loss = recons_loss
+            recons_loss = l2(reconstruction.float(), images.float())
+        loss = recons_loss.sum()
         loss.backward()
         opt.step()
         epoch_loss += recons_loss.item()
@@ -79,9 +79,9 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
         opt.zero_grad(set_to_none=True)
         with ctx:
             reconstruction, z_mu, z_sigma = model(images)
-            recons_loss = l2(reconstruction.float(), images.float()).sum()
-            kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
-        loss = recons_loss + kl_loss
+            recons_loss = l2(reconstruction.float(), images.float())
+            kl_loss = kld(z_mu, 2*(z_sigma).log())
+        loss = (recons_loss + kl_loss).sum()
         loss.backward()
         opt.step()
         epoch_loss += recons_loss.item()
@@ -110,9 +110,9 @@ def train_epoch_betavae(train_iter, epoch_length, train_loader, opt, model, epoc
         opt.zero_grad(set_to_none=True)
         with ctx:
             reconstruction, z_mu, z_sigma = model(images)
-            recons_loss = l2(reconstruction.float(), images.float()).sum()
-            kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
-        loss = recons_loss + beta * kl_loss
+            recons_loss = l2(reconstruction.float(), images.float())
+            kl_loss = kld(z_mu, 2*(z_sigma).log())
+        loss = (recons_loss + beta * kl_loss).sum()
         loss.backward()
         opt.step()
         epoch_loss += recons_loss.item()
@@ -141,9 +141,9 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
         opt.zero_grad(set_to_none=True)
         with ctx:
             reconstruction, recon_sigma, z_mu, z_sigma = model(images)
-            recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float()).sum()
-            kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
-        loss = recons_loss + kl_loss
+            recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float())
+            kl_loss = kld(z_mu, 2*(z_sigma).log())
+        loss = (recons_loss + kl_loss).sum()
         loss.backward()
         opt.step()
         epoch_loss += recons_loss.item()
@@ -172,8 +172,8 @@ def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch,
         opt.zero_grad(set_to_none=True)
         with ctx:
             reconstruction, quantization_loss = model(images)
-            recons_loss = l2(reconstruction.float(), images.float()).sum()
-        loss = recons_loss + quantization_loss
+            recons_loss = l2(reconstruction.float(), images.float())
+        loss = recons_loss.sum() + quantization_loss
         loss.backward()
         opt.step()
         epoch_loss += recons_loss.item()
