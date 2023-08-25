@@ -127,7 +127,7 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
     kld_loss = 0
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
     progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
-    progress_bar.set_description(f"Epoch {epoch}")
+    progress_bar.set_description(f"[Training] Epoch {epoch}")
     if train_iter is None:
         train_iter = iter(train_loader)
     for step in progress_bar:
@@ -186,74 +186,85 @@ def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch,
 ### validation stuff ###
 
 
-def val_epoch_ae(val_loader, model, device, amp):
+def val_epoch_ae(val_loader, model, device, amp, epoch):
     val_loss = 0
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
+    progress_bar = tqdm(enumerate(val_loader), total=len(val_loader), ncols=110)
+    progress_bar.set_description(f"[Validation] Epoch {epoch}")
     with torch.no_grad():
-        for val_step, batch in enumerate(val_loader, start=1):
+        for val_step, batch in progress_bar:
             images = batch["image"].to(device)
             with ctx:
                 reconstruction = model(images)
-            if val_step == 1:
+            if val_step == 0:
                 wandb.log({"input": wandb.Image(images[0,0].cpu().numpy()),
                             "recon": wandb.Image(reconstruction[0,0].cpu().numpy())})
             recons_loss = l2(reconstruction.float(), images.float())
             val_loss += recons_loss.item()
-    wandb.log({"val/recon_loss": val_loss / val_step})
+    progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1)})
+    wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
 
-def val_epoch_vae(val_loader, model, device, amp):
+def val_epoch_vae(val_loader, model, device, amp, epoch):
     val_loss = 0
     kld_loss = 0
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
+    progress_bar = tqdm(enumerate(val_loader), total=len(val_loader), ncols=110)
+    progress_bar.set_description(f"[Validation] Epoch {epoch}")
     with torch.no_grad():
-        for val_step, batch in enumerate(val_loader, start=1):
+        for val_step, batch in progress_bar:
             images = batch["image"].to(device)
             with ctx:
                 reconstruction, z_mu, z_sigma = model(images)
-            if val_step == 1:
+            if val_step == 0:
                 wandb.log({"input": wandb.Image(images[0,0].cpu().numpy()),
                             "recon": wandb.Image(reconstruction[0,0].cpu().numpy())})
             recons_loss = l2(reconstruction.float(), images.float()).sum()
             kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
             val_loss += recons_loss.item()
             kld_loss += kl_loss.item()
-    wandb.log({"val/recon_loss": val_loss / val_step})
-    wandb.log({"val/kld_loss": val_loss / val_step})
+    progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "kld_loss": val_loss / (val_step + 1)})
+    wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
+    wandb.log({"val/kld_loss": val_loss / (val_step + 1)})
 
-def val_epoch_gaussvae(val_loader, model, device, amp):
+def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
     val_loss = 0
     kld_loss = 0
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
+    progress_bar = tqdm(enumerate(val_loader), total=len(val_loader), ncols=110)
+    progress_bar.set_description(f"[Validation] Epoch {epoch}")
     with torch.no_grad():
-        for val_step, batch in enumerate(val_loader, start=1):
+        for val_step, batch in progress_bar:
             images = batch["image"].to(device)
             with ctx:
                 reconstruction, recon_sigma, z_mu, z_sigma = model(images)
-            if val_step == 1:
+            if val_step == 0:
                 wandb.log({"input": wandb.Image(images[0,0].cpu().numpy()),
                             "recon": wandb.Image(reconstruction[0,0].cpu().numpy())})
             recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float()).sum()
             kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
             val_loss += recons_loss.item()
             kld_loss += kl_loss.item()
-    wandb.log({"val/recon_loss": val_loss / val_step})
-    wandb.log({"val/kld_loss": val_loss / val_step})
+    progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "kld_loss": val_loss / (val_step + 1)})
+    wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
+    wandb.log({"val/kld_loss": val_loss / (val_step + 1)})
 
-def val_epoch_vqvae(val_loader, model, device, amp):
+def val_epoch_vqvae(val_loader, model, device, amp, epoch):
     val_loss = 0
     val_quant = 0
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
+    progress_bar = tqdm(enumerate(val_loader), total=len(val_loader), ncols=110)
+    progress_bar.set_description(f"[Validation] Epoch {epoch}")
     with torch.no_grad():
-        for val_step, batch in enumerate(val_loader, start=1):
+        for val_step, batch in progress_bar:
             images = batch["image"].to(device)
             with ctx:
                 reconstruction, quantization_loss = model(images)
-            if val_step == 1:
+            if val_step == 0:
                 wandb.log({"input": wandb.Image(images[0,0].cpu().numpy()),
                             "recon": wandb.Image(reconstruction[0,0].cpu().numpy())})
             recons_loss = l2(reconstruction.float(), images.float())
             val_loss += recons_loss.item()
             val_quant += quantization_loss.item()
-    wandb.log({"val/recon_loss": val_loss / val_step})
-    wandb.log({"val/quant_loss": val_quant / val_step})
-    
+    progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "quantization_loss": val_quant / (val_step + 1)})
+    wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
+    wandb.log({"val/quant_loss": val_quant / (val_step + 1)})
