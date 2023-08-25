@@ -32,13 +32,20 @@ def gauss_l2(x_mu, x_sigma, x):
 ### training stuff ###
 
 
-def train_epoch_ae(train_loader, opt, model, epoch, device, amp):
+def train_epoch_ae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
     model.train()
     epoch_loss = 0
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
-    progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=110)
+    progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
     progress_bar.set_description(f"Epoch {epoch}")
-    for step, batch in progress_bar:
+    if train_iter is None:
+        train_iter = iter(train_loader)
+    for step in progress_bar:
+        try:
+            batch = train_iter.next()
+        except:
+            train_iter = iter(train_loader)
+            batch = train_iter.next()
         images = batch["image"].to(device)
         opt.zero_grad(set_to_none=True)
         with ctx:
@@ -50,15 +57,23 @@ def train_epoch_ae(train_loader, opt, model, epoch, device, amp):
         epoch_loss += recons_loss.item()
         wandb.log({"train/recon_loss": recons_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1)})
+        return train_iter
 
-def train_epoch_vae(train_loader, opt, model, epoch, device, amp):
+def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
     model.train()
     epoch_loss = 0
     kld_loss = 0
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
-    progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=110)
+    progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
     progress_bar.set_description(f"Epoch {epoch}")
-    for step, batch in progress_bar:
+    if train_iter is None:
+        train_iter = iter(train_loader)
+    for step in progress_bar:
+        try:
+            batch = train_iter.next()
+        except:
+            train_iter = iter(train_loader)
+            batch = train_iter.next()
         images = batch["image"].to(device)
         opt.zero_grad(set_to_none=True)
         with ctx:
@@ -73,15 +88,23 @@ def train_epoch_vae(train_loader, opt, model, epoch, device, amp):
         wandb.log({"train/recon_loss": recons_loss.item()})
         wandb.log({"train/kld_loss": kl_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
+        return train_iter
 
-def train_epoch_betavae(train_loader, opt, model, epoch, device, beta, amp):
+def train_epoch_betavae(train_iter, epoch_length, train_loader, opt, model, epoch, device, beta, amp):
     model.train()
     epoch_loss = 0
     kld_loss = 0
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
-    progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=110)
+    progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
     progress_bar.set_description(f"Epoch {epoch}")
-    for step, batch in progress_bar:
+    if train_iter is None:
+        train_iter = iter(train_loader)
+    for step in progress_bar:
+        try:
+            batch = train_iter.next()
+        except:
+            train_iter = iter(train_loader)
+            batch = train_iter.next()
         images = batch["image"].to(device)
         opt.zero_grad(set_to_none=True)
         with ctx:
@@ -96,15 +119,23 @@ def train_epoch_betavae(train_loader, opt, model, epoch, device, beta, amp):
         wandb.log({"train/recon_loss": recons_loss.item()})
         wandb.log({"train/kld_loss": kl_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
+        return train_iter
 
-def train_epoch_gaussvae(train_loader, opt, model, epoch, device, amp):
+def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
     model.train()
     epoch_loss = 0
     kld_loss = 0
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
-    progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=110)
+    progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
     progress_bar.set_description(f"Epoch {epoch}")
-    for step, batch in progress_bar:
+    if train_iter is None:
+        train_iter = iter(train_loader)
+    for step in progress_bar:
+        try:
+            batch = train_iter.next()
+        except:
+            train_iter = iter(train_loader)
+            batch = train_iter.next()
         images = batch["image"].to(device)
         opt.zero_grad(set_to_none=True)
         with ctx:
@@ -119,15 +150,23 @@ def train_epoch_gaussvae(train_loader, opt, model, epoch, device, amp):
         wandb.log({"train/recon_loss": recons_loss.item()})
         wandb.log({"train/kld_loss": kl_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
+        return train_iter
 
-def train_epoch_vqvae(train_loader, opt, model, epoch, device, amp):
+def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
     model.train()
     epoch_loss = 0
     quant_loss = 0
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
-    progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=110)
+    progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
     progress_bar.set_description(f"Epoch {epoch}")
-    for step, batch in progress_bar:
+    if train_iter is None:
+        train_iter = iter(train_loader)
+    for step in progress_bar:
+        try:
+            batch = train_iter.next()
+        except:
+            train_iter = iter(train_loader)
+            batch = train_iter.next()
         images = batch["image"].to(device)
         opt.zero_grad(set_to_none=True)
         with ctx:
@@ -141,6 +180,7 @@ def train_epoch_vqvae(train_loader, opt, model, epoch, device, amp):
         wandb.log({"train/recon_loss": recons_loss.item()})
         wandb.log({"train/quant_loss": quantization_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "quantization_loss": quant_loss / (step + 1)})
+        return train_iter
 
 
 ### validation stuff ###
@@ -216,3 +256,4 @@ def val_epoch_vqvae(val_loader, model, device, amp):
             val_quant += quantization_loss.item()
     wandb.log({"val/recon_loss": val_loss / val_step})
     wandb.log({"val/quant_loss": val_quant / val_step})
+    

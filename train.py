@@ -15,7 +15,7 @@ if __name__ =='__main__':
     parser.add_argument("--name", type=str, help="Name of WandB run.")
     parser.add_argument("--model", type=str, help="Model to use. Full list of options available in Pythae docs.")
     parser.add_argument("--epochs", type=int, default=200, help="Number of epochs for training.")
-    # parser.add_argument("--epoch_length", type=int, default=100, help="Number of iterations per epoch.")
+    parser.add_argument("--epoch_length", type=int, default=100, help="Number of iterations per epoch.")
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
     parser.add_argument("--val_interval", type=int, default=2, help="Validation interval.")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
@@ -165,18 +165,19 @@ if __name__ =='__main__':
     val_loader = DataLoader(your_eval_data, batch_size=args.batch_size, shuffle=True)
     print()
 
+    train_iter = None
     for epoch in range(start_epoch, args.epochs):
         model.train()
         if args.model == 'AE':
-            train_utils.train_epoch_ae(train_loader, opt, model, epoch, device, args.amp)
+            train_iter = train_utils.train_epoch_ae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         elif args.model == 'VAE':
-            train_utils.train_epoch_vae(train_loader, opt, model, epoch, device, args.amp)
+            train_iter = train_utils.train_epoch_vae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         elif args.model == 'BetaVAE':
-            train_utils.train_epoch_betavae(train_loader, opt, model, epoch, device, betas[epoch], args.amp)
+            train_iter = train_utils.train_epoch_betavae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, betas[epoch], args.amp)
         elif args.model == 'GaussVAE':
-            train_utils.train_epoch_gaussvae(train_loader, opt, model, epoch, device, args.amp)
+            train_iter = train_utils.train_epoch_gaussvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         elif args.model == 'VQVAE':
-            train_utils.train_epoch_vqvae(train_loader, opt, model, epoch, device, args.amp)
+            train_iter = train_utils.train_epoch_vqvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         lr_scheduler.step()
 
         if (epoch + 1) % args.val_interval == 0:
