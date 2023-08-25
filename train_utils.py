@@ -180,7 +180,7 @@ def val_epoch_vae(val_loader, model, device, amp):
     wandb.log({"val/recon_loss": val_loss / val_step})
     wandb.log({"val/kld_loss": val_loss / val_step})
 
-def val_epoch_vae(val_loader, model, device, amp):
+def val_epoch_gaussvae(val_loader, model, device, amp):
     val_loss = 0
     kld_loss = 0
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
