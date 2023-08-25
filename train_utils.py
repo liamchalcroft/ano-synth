@@ -57,6 +57,7 @@ def train_epoch_ae(train_iter, epoch_length, train_loader, opt, model, epoch, de
         opt.zero_grad(set_to_none=True)
         with ctx:
             reconstruction = model(images)
+            reconstruction = torch.sigmoid(reconstruction)
             recons_loss = l2(reconstruction.float(), images.float())
             loss = recons_loss.sum()
         if amp:
@@ -97,6 +98,7 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
         opt.zero_grad(set_to_none=True)
         with ctx:
             reconstruction, z_mu, z_sigma = model(images)
+            reconstruction = torch.sigmoid(reconstruction)
             recons_loss = l2(reconstruction.float(), images.float())
             kl_loss = kld(z_mu, 2*(z_sigma).log())
             loss = (recons_loss + kl_loss).sum()
@@ -140,6 +142,7 @@ def train_epoch_betavae(train_iter, epoch_length, train_loader, opt, model, epoc
         opt.zero_grad(set_to_none=True)
         with ctx:
             reconstruction, z_mu, z_sigma = model(images)
+            reconstruction = torch.sigmoid(reconstruction)
             recons_loss = l2(reconstruction.float(), images.float())
             kl_loss = kld(z_mu, 2*(z_sigma).log())
             loss = (recons_loss + beta * kl_loss).sum()
@@ -183,6 +186,7 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
         opt.zero_grad(set_to_none=True)
         with ctx:
             reconstruction, recon_sigma, z_mu, z_sigma = model(images)
+            reconstruction = torch.sigmoid(reconstruction)
             recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float())
             kl_loss = kld(z_mu, 2*z_sigma.log())
             loss = (recons_loss + kl_loss).sum()
@@ -226,6 +230,7 @@ def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch,
         opt.zero_grad(set_to_none=True)
         with ctx:
             reconstruction, quantization_loss = model(images)
+            reconstruction = torch.sigmoid(reconstruction)
             recons_loss = l2(reconstruction.float(), images.float())
             loss = recons_loss.sum() + quantization_loss
         if amp:
@@ -261,6 +266,7 @@ def val_epoch_ae(val_loader, model, device, amp, epoch):
             images = batch["image"].to(device)
             with ctx:
                 reconstruction = model(images)
+                reconstruction = torch.sigmoid(reconstruction)
             if val_step < 16:
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
@@ -287,6 +293,7 @@ def val_epoch_vae(val_loader, model, device, amp, epoch):
             images = batch["image"].to(device)
             with ctx:
                 reconstruction, z_mu, z_sigma = model(images)
+                reconstruction = torch.sigmoid(reconstruction)
             if val_step < 16:
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
@@ -317,6 +324,7 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
             images = batch["image"].to(device)
             with ctx:
                 reconstruction, recon_sigma, z_mu, z_sigma = model(images)
+                reconstruction = torch.sigmoid(reconstruction)
             if val_step < 16:
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
@@ -349,6 +357,7 @@ def val_epoch_vqvae(val_loader, model, device, amp, epoch):
             images = batch["image"].to(device)
             with ctx:
                 reconstruction, quantization_loss = model(images)
+                reconstruction = torch.sigmoid(reconstruction)
             if val_step < 16:
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
