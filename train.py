@@ -162,7 +162,7 @@ if __name__ =='__main__':
     dataset_output = your_train_data[0]    
     dataset_output = your_eval_data[0]
     train_loader = DataLoader(your_train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
-    val_loader = DataLoader(your_eval_data, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
+    val_loader = DataLoader(your_eval_data, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
     print()
 
     train_iter = None
