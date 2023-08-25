@@ -10,6 +10,9 @@ from torchvision.utils import make_grid
 
 
 def kld(mu, log_var):
+    print(mu.shape, log_var.shape)
+    mu = mu.reshape(mu.shape[0], -1)
+    log_var = log_var.reshape(log_var.shape[0], -1)
     return -0.5 * (1 + log_var - mu.pow(2) - log_var.exp()).sum(-1)
 
 def l2(recon_x, x):
