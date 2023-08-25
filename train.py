@@ -124,6 +124,7 @@ if __name__ =='__main__':
             ckpt = sorted(ckpts, key=lambda d: d['epoch'])[-1]
             print('\nResuming from epoch #{}'.format(ckpt['epoch']))
             print(torch.load(ckpt['path'], map_location=device)["wandb"])
+        print()
 
     wandb.init(
         project="ano-synth",
