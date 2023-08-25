@@ -12,9 +12,9 @@ from torch.cuda.amp import GradScaler
 
 
 def kld(mu, log_var):
-    mu = mu.reshape(mu.shape[0], -1)
-    log_var = log_var.reshape(log_var.shape[0], -1)
-    return -0.5 * (1 + log_var - mu.pow(2) - log_var.exp()).sum(-1)
+    mu = mu.reshape(mu.shape[0], mu.shape[1], -1)
+    log_var = log_var.reshape(log_var.shape[0], log_var.shape[1], -1)
+    return -0.5 * (1 + log_var - mu.pow(2) - log_var.exp()).sum(1).mean(-1)
 
 def l2(recon_x, x):
     x = x.reshape(x.shape[0], -1)
