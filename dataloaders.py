@@ -4,11 +4,7 @@ import numpy as np
 import os, glob
 
 img_list = glob.glob('oasis/*/aligned_norm.nii.gz')
-# mb_list = glob.glob('oasis/*/aligned_seg35.nii.gz')
-
 img_list_train, img_list_val = img_list[:int(0.9*len(img_list))], img_list[int(0.9*len(img_list)):]
-# mb_list_train, mb_list_val = mb_list[:int(0.8*len(mb_list))], mb_list[int(0.8*len(mb_list)):]
-
 print('\nTrain Images: {}\nVal Images: {}'.format(len(img_list_train), len(img_list_val)))
 
 def get_mri_data(device):
@@ -16,7 +12,6 @@ def get_mri_data(device):
         mn.transforms.LoadImageD(keys=["image", "label"]),
         mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
         mn.transforms.ToTensorD(keys=["image","label"], 
-                                # device=device, 
                                 dtype=float),
         mn.transforms.SpacingD(keys=['image','label'], pixdim=1, mode=['bilinear', 'nearest']),
         mn.transforms.ResizeD(keys=['image','label'], spatial_size=(192,192), mode=('bilinear','nearest')),
@@ -43,7 +38,6 @@ def get_synth_data(device):
         mn.transforms.LoadImageD(keys=["label"]),
         mn.transforms.EnsureChannelFirstD(keys=["label"]),
         mn.transforms.ToTensorD(keys=["label"], 
-                                # device=device, 
                                 dtype=int),
         mn.transforms.SpacingD(keys=['label'], pixdim=1, mode=['nearest']),
         GMMSynthD(mu=255, std=16, fwhm=5, gmm_fwhm=5),
