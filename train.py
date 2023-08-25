@@ -21,7 +21,7 @@ if __name__ =='__main__':
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
     parser.add_argument("--beta_init", type=int, default=0, help="Initial beta (for BetaVAE only).")
     parser.add_argument("--beta_final", type=int, default=20, help="Final beta (for BetaVAE only).")
-    # parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
+    parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
     parser.add_argument("--synth", action='store_true', help="Use synthetic training data.")
     parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
     parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
@@ -161,8 +161,8 @@ if __name__ =='__main__':
         your_train_data, your_eval_data = dataloaders.get_mri_data(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
     dataset_output = your_train_data[0]    
     dataset_output = your_eval_data[0]
-    train_loader = DataLoader(your_train_data, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(your_eval_data, batch_size=args.batch_size, shuffle=True)
+    train_loader = DataLoader(your_train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
+    val_loader = DataLoader(your_eval_data, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
     print()
 
     train_iter = None
