@@ -44,7 +44,7 @@ def train_epoch_ae(train_iter, epoch_length, train_loader, opt, model, epoch, de
     else:
         ctx = nullcontext()
     progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
-    progress_bar.set_description(f"Epoch {epoch}")
+    progress_bar.set_description(f"[Training] Epoch {epoch}")
     if train_iter is None:
         train_iter = iter(train_loader)
     for step in progress_bar:
@@ -84,7 +84,7 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
     else:
         ctx = nullcontext()
     progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
-    progress_bar.set_description(f"Epoch {epoch}")
+    progress_bar.set_description(f"[Training] Epoch {epoch}")
     if train_iter is None:
         train_iter = iter(train_loader)
     for step in progress_bar:
@@ -127,7 +127,7 @@ def train_epoch_betavae(train_iter, epoch_length, train_loader, opt, model, epoc
     else:
         ctx = nullcontext()
     progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
-    progress_bar.set_description(f"Epoch {epoch}")
+    progress_bar.set_description(f"[Training] Epoch {epoch}")
     if train_iter is None:
         train_iter = iter(train_loader)
     for step in progress_bar:
@@ -213,7 +213,7 @@ def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch,
     else:
         ctx = nullcontext()
     progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
-    progress_bar.set_description(f"Epoch {epoch}")
+    progress_bar.set_description(f"[Training] Epoch {epoch}")
     if train_iter is None:
         train_iter = iter(train_loader)
     for step in progress_bar:
