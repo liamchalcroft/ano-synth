@@ -56,8 +56,8 @@ def train_epoch_ae(train_iter, epoch_length, train_loader, opt, model, epoch, de
         loss = recons_loss.sum()
         loss.backward()
         opt.step()
-        epoch_loss += recons_loss.item()
-        wandb.log({"train/recon_loss": recons_loss.item()})
+        epoch_loss += recons_loss.sum().item()
+        wandb.log({"train/recon_loss": recons_loss.sum().item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1)})
     return train_iter
 
@@ -85,10 +85,10 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
         loss = (recons_loss + kl_loss).sum()
         loss.backward()
         opt.step()
-        epoch_loss += recons_loss.item()
-        kld_loss += kl_loss.item()
-        wandb.log({"train/recon_loss": recons_loss.item()})
-        wandb.log({"train/kld_loss": kl_loss.item()})
+        epoch_loss += recons_loss.sum().item()
+        kld_loss += kl_loss.sum().item()
+        wandb.log({"train/recon_loss": recons_loss.sum().item()})
+        wandb.log({"train/kld_loss": kl_loss.sum().item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
     return train_iter
 
@@ -116,10 +116,10 @@ def train_epoch_betavae(train_iter, epoch_length, train_loader, opt, model, epoc
         loss = (recons_loss + beta * kl_loss).sum()
         loss.backward()
         opt.step()
-        epoch_loss += recons_loss.item()
-        kld_loss += kl_loss.item()
-        wandb.log({"train/recon_loss": recons_loss.item()})
-        wandb.log({"train/kld_loss": kl_loss.item()})
+        epoch_loss += recons_loss.sum().item()
+        kld_loss += kl_loss.sum().item()
+        wandb.log({"train/recon_loss": recons_loss.sum().item()})
+        wandb.log({"train/kld_loss": kl_loss.sum().item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
     return train_iter
 
@@ -149,10 +149,10 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
         print(type(loss))
         loss.backward()
         opt.step()
-        epoch_loss += recons_loss.item()
-        kld_loss += kl_loss.item()
-        wandb.log({"train/recon_loss": recons_loss.item()})
-        wandb.log({"train/kld_loss": kl_loss.item()})
+        epoch_loss += recons_loss.sum().item()
+        kld_loss += kl_loss.sum().item()
+        wandb.log({"train/recon_loss": recons_loss.sum().item()})
+        wandb.log({"train/kld_loss": kl_loss.sum().item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
     return train_iter
 
@@ -179,9 +179,9 @@ def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch,
         loss = recons_loss.sum() + quantization_loss
         loss.backward()
         opt.step()
-        epoch_loss += recons_loss.item()
+        epoch_loss += recons_loss.sum().item()
         quant_loss += quantization_loss.item()
-        wandb.log({"train/recon_loss": recons_loss.item()})
+        wandb.log({"train/recon_loss": recons_loss.sum().item()})
         wandb.log({"train/quant_loss": quantization_loss.item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "quantization_loss": quant_loss / (step + 1)})
     return train_iter
@@ -210,8 +210,8 @@ def val_epoch_ae(val_loader, model, device, amp, epoch):
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
                 wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
                                             wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
-            recons_loss = l2(reconstruction.float(), images.float()).sum()
-            val_loss += recons_loss.item()
+            recons_loss = l2(reconstruction.float(), images.float())
+            val_loss += recons_loss.sum().item()
     progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1)})
     wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
 
@@ -236,10 +236,10 @@ def val_epoch_vae(val_loader, model, device, amp, epoch):
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
                 wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
                                             wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
-            recons_loss = l2(reconstruction.float(), images.float()).sum()
-            kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
-            val_loss += recons_loss.item()
-            kld_loss += kl_loss.item()
+            recons_loss = l2(reconstruction.float(), images.float())
+            kl_loss = kld(z_mu, 2*(z_sigma).log())
+            val_loss += recons_loss.sum().item()
+            kld_loss += kl_loss.sum().item()
     progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "kld_loss": val_loss / (val_step + 1)})
     wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
     wandb.log({"val/kld_loss": val_loss / (val_step + 1)})
@@ -269,10 +269,10 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
                 wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
                                             wandb.Image(grid_recons[0].numpy(), caption="Reconstructions"),
                                             wandb.Image(grid_sigmas[0].numpy(), caption="Uncertanties")]})
-            recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float()).sum()
-            kl_loss = kld(z_mu, 2*(z_sigma).log()).sum()
-            val_loss += recons_loss.item()
-            kld_loss += kl_loss.item()
+            recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float())
+            kl_loss = kld(z_mu, 2*(z_sigma).log())
+            val_loss += recons_loss.sum().item()
+            kld_loss += kl_loss.sum().item()
     progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "kld_loss": val_loss / (val_step + 1)})
     wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
     wandb.log({"val/kld_loss": val_loss / (val_step + 1)})
@@ -298,9 +298,9 @@ def val_epoch_vqvae(val_loader, model, device, amp, epoch):
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
                 wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
                                             wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
-            recons_loss = l2(reconstruction.float(), images.float()).sum()
-            val_loss += recons_loss.item()
-            val_quant += quantization_loss.item()
+            recons_loss = l2(reconstruction.float(), images.float())
+            val_loss += recons_loss.sum().item()
+            val_quant += quantization_loss.sum().item()
     progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "quantization_loss": val_quant / (val_step + 1)})
     wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
     wandb.log({"val/quant_loss": val_quant / (val_step + 1)})
