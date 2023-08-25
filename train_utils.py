@@ -42,10 +42,10 @@ def train_epoch_ae(train_iter, epoch_length, train_loader, opt, model, epoch, de
         train_iter = iter(train_loader)
     for step in progress_bar:
         try:
-            batch = train_iter.next()
+            batch = next(train_iter)
         except:
             train_iter = iter(train_loader)
-            batch = train_iter.next()
+            batch = next(train_iter)
         images = batch["image"].to(device)
         opt.zero_grad(set_to_none=True)
         with ctx:
@@ -70,10 +70,10 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
         train_iter = iter(train_loader)
     for step in progress_bar:
         try:
-            batch = train_iter.next()
+            batch = next(train_iter)
         except:
             train_iter = iter(train_loader)
-            batch = train_iter.next()
+            batch = next(train_iter)
         images = batch["image"].to(device)
         opt.zero_grad(set_to_none=True)
         with ctx:
@@ -101,10 +101,10 @@ def train_epoch_betavae(train_iter, epoch_length, train_loader, opt, model, epoc
         train_iter = iter(train_loader)
     for step in progress_bar:
         try:
-            batch = train_iter.next()
+            batch = next(train_iter)
         except:
             train_iter = iter(train_loader)
-            batch = train_iter.next()
+            batch = next(train_iter)
         images = batch["image"].to(device)
         opt.zero_grad(set_to_none=True)
         with ctx:
@@ -132,10 +132,10 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
         train_iter = iter(train_loader)
     for step in progress_bar:
         try:
-            batch = train_iter.next()
+            batch = next(train_iter)
         except:
             train_iter = iter(train_loader)
-            batch = train_iter.next()
+            batch = next(train_iter)
         images = batch["image"].to(device)
         opt.zero_grad(set_to_none=True)
         with ctx:
@@ -163,10 +163,10 @@ def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch,
         train_iter = iter(train_loader)
     for step in progress_bar:
         try:
-            batch = train_iter.next()
+            batch = next(train_iter)
         except:
             train_iter = iter(train_loader)
-            batch = train_iter.next()
+            batch = next(train_iter)
         images = batch["image"].to(device)
         opt.zero_grad(set_to_none=True)
         with ctx:
