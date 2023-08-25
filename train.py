@@ -200,5 +200,4 @@ if __name__ =='__main__':
                     "wandb": WandBID(wandb.run.id).state_dict()
                 },
                 os.path.join(args.root, args.name,'checkpoint_epoch={}.pt'.format(epoch)))
-            os.path.join(args.logdir, args.name)
             
