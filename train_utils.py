@@ -299,9 +299,9 @@ def val_epoch_vae(val_loader, model, device, amp, epoch):
             kl_loss = kld(z_mu, 2*(z_sigma).log())
             val_loss += recons_loss.sum().item()
             kld_loss += kl_loss.sum().item()
-            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "kld_loss": val_loss / (val_step + 1)})
+            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "kld_loss": kld_loss / (val_step + 1)})
     wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
-    wandb.log({"val/kld_loss": val_loss / (val_step + 1)})
+    wandb.log({"val/kld_loss": kld_loss / (val_step + 1)})
 
 def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
     val_loss = 0
@@ -332,9 +332,9 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
             kl_loss = kld(z_mu, 2*(z_sigma).log())
             val_loss += recons_loss.sum().item()
             kld_loss += kl_loss.sum().item()
-            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "kld_loss": val_loss / (val_step + 1)})
+            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "kld_loss": kld_loss / (val_step + 1)})
     wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
-    wandb.log({"val/kld_loss": val_loss / (val_step + 1)})
+    wandb.log({"val/kld_loss": kld_loss / (val_step + 1)})
 
 def val_epoch_vqvae(val_loader, model, device, amp, epoch):
     val_loss = 0
