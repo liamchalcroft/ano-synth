@@ -1352,7 +1352,7 @@ class AutoencoderKL(nn.Module):
 
         z_mu = self.quant_conv_mu(h)
         z_log_var = self.quant_conv_log_sigma(h)
-        z_log_var = torch.clamp(z_log_var, -30.0, 20.0)
+        z_log_var = torch.clamp(z_log_var, -10.0, 1.0)
         z_sigma = torch.exp(z_log_var / 2)
 
         return z_mu, z_sigma
@@ -1736,7 +1736,7 @@ class GaussAutoencoderKL(nn.Module):
 
         z_mu = self.quant_conv_mu(h)
         z_log_var = self.quant_conv_log_sigma(h)
-        z_log_var = torch.clamp(z_log_var, -30.0, 20.0)
+        z_log_var = torch.clamp(z_log_var, -10.0, 1.0)
         z_sigma = torch.exp(z_log_var / 2)
 
         return z_mu, z_sigma
@@ -1770,7 +1770,7 @@ class GaussAutoencoderKL(nn.Module):
         """
         z_mu, _ = self.encode(x)
         reconstruction, recon_log_var = self.decode(z_mu)
-        recon_log_var = torch.clamp(recon_log_var, -30.0, 20.0)
+        recon_log_var = torch.clamp(recon_log_var, -10.0, 1.0)
         recon_sigma = torch.exp(recon_log_var / 2)
         return reconstruction, recon_sigma
 
@@ -1797,7 +1797,7 @@ class GaussAutoencoderKL(nn.Module):
         z_mu, z_sigma = self.encode(x)
         z = self.sampling(z_mu, z_sigma)
         reconstruction, recon_log_var = self.decode(z)
-        recon_log_var = torch.clamp(recon_log_var, -30.0, 20.0)
+        recon_log_var = torch.clamp(recon_log_var, -10.0, 1.0)
         recon_sigma = torch.exp(recon_log_var / 2)
         return reconstruction, recon_sigma, z_mu, z_sigma
 
@@ -1808,6 +1808,6 @@ class GaussAutoencoderKL(nn.Module):
 
     def decode_stage_2_outputs(self, z: torch.Tensor) -> torch.Tensor:
         image, image_log_var = self.decode(z)
-        image_log_var = torch.clamp(image_log_var, -30.0, 20.0)
+        image_log_var = torch.clamp(image_log_var, -10.0, 1.0)
         image_sigma = torch.exp(image_log_var / 2)
         return image, image_sigma
