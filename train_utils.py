@@ -203,8 +203,8 @@ def val_epoch_ae(val_loader, model, device, amp, epoch):
                 inputs.append(images[0,0].cpu())
                 recons.append(reconstruction[0,0].cpu())
             elif val_step == 16:
-                grid_inputs = make_grid(inputs, nrow=4, ncol=4, padding=5)
-                grid_recons = make_grid(recons, nrow=4, ncol=4, padding=5)
+                grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
+                grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
                 wandb.log({"input": wandb.Image(grid_inputs.numpy()),
                             "recon": wandb.Image(grid_recons.numpy())})
             recons_loss = l2(reconstruction.float(), images.float()).sum()
@@ -229,8 +229,8 @@ def val_epoch_vae(val_loader, model, device, amp, epoch):
                 inputs.append(images[0,0].cpu())
                 recons.append(reconstruction[0,0].cpu())
             elif val_step == 16:
-                grid_inputs = make_grid(inputs, nrow=4, ncol=4, padding=5)
-                grid_recons = make_grid(recons, nrow=4, ncol=4, padding=5)
+                grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
+                grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
                 wandb.log({"input": wandb.Image(grid_inputs.numpy()),
                             "recon": wandb.Image(grid_recons.numpy())})
             recons_loss = l2(reconstruction.float(), images.float()).sum()
@@ -258,8 +258,8 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
                 inputs.append(images[0,0].cpu())
                 recons.append(reconstruction[0,0].cpu())
             elif val_step == 16:
-                grid_inputs = make_grid(inputs, nrow=4, ncol=4, padding=5)
-                grid_recons = make_grid(recons, nrow=4, ncol=4, padding=5)
+                grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
+                grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
                 wandb.log({"input": wandb.Image(grid_inputs.numpy()),
                             "recon": wandb.Image(grid_recons.numpy())})
             recons_loss = gauss_l2(reconstruction.float(), recon_sigma.float(), images.float()).sum()
@@ -287,8 +287,8 @@ def val_epoch_vqvae(val_loader, model, device, amp, epoch):
                 inputs.append(images[0,0].cpu())
                 recons.append(reconstruction[0,0].cpu())
             elif val_step == 16:
-                grid_inputs = make_grid(inputs, nrow=4, ncol=4, padding=5)
-                grid_recons = make_grid(recons, nrow=4, ncol=4, padding=5)
+                grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
+                grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
                 wandb.log({"input": wandb.Image(grid_inputs.numpy()),
                             "recon": wandb.Image(grid_recons.numpy())})
             recons_loss = l2(reconstruction.float(), images.float()).sum()
