@@ -50,7 +50,7 @@ if __name__ =='__main__':
             norm_num_groups=16,
             with_encoder_nonlocal_attn=False,
             with_decoder_nonlocal_attn=False,
-            attention_levels=(False,False,False,False),
+            attention_levels=(False,False,False,False,False,False),
             use_convtranspose=False,
             latent_channels=128,
         ).to(device)
@@ -64,7 +64,7 @@ if __name__ =='__main__':
             norm_num_groups=16,
             with_encoder_nonlocal_attn=False,
             with_decoder_nonlocal_attn=False,
-            attention_levels=(False,False,False,False),
+            attention_levels=(False,False,False,False,False,False),
             use_convtranspose=False,
             latent_channels=128,
         ).to(device)
@@ -78,7 +78,7 @@ if __name__ =='__main__':
             norm_num_groups=16,
             with_encoder_nonlocal_attn=False,
             with_decoder_nonlocal_attn=False,
-            attention_levels=(False,False,False,False),
+            attention_levels=(False,False,False,False,False,False),
             use_convtranspose=False,
             latent_channels=128,
         ).to(device)
@@ -93,7 +93,7 @@ if __name__ =='__main__':
             norm_num_groups=16,
             with_encoder_nonlocal_attn=False,
             with_decoder_nonlocal_attn=False,
-            attention_levels=(False,False,False,False),
+            attention_levels=(False,False,False,False,False,False),
             use_convtranspose=False,
             latent_channels=128,
         ).to(device)
