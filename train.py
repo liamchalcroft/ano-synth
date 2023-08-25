@@ -116,8 +116,7 @@ if __name__ =='__main__':
         else:
             ckpts = [{'path': p, 'epoch': int(p.split('_')[-1][:-3].split('=')[-1])} for p in ckpts]
             ckpt = sorted(ckpts, key=lambda d: d['epoch'])[-1]
-            print('\nResuming from epoch #{}'.format(ckpt['epoch']))
-            print(torch.load(ckpt['path'], map_location=device)["wandb"])
+            print('\nResuming from epoch #{} with WandB ID {}'.format(ckpt['epoch'],torch.load(ckpt['path'], map_location=device)["wandb"]))
         print()
 
     wandb.init(
