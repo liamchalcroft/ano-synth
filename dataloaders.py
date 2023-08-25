@@ -6,7 +6,7 @@ import os, glob
 img_list = glob.glob('oasis/*/aligned_norm.nii.gz')
 # mb_list = glob.glob('oasis/*/aligned_seg35.nii.gz')
 
-img_list_train, img_list_val = img_list[:int(0.8*len(img_list))], img_list[int(0.8*len(img_list)):]
+img_list_train, img_list_val = img_list[:int(0.9*len(img_list))], img_list[int(0.9*len(img_list)):]
 # mb_list_train, mb_list_val = mb_list[:int(0.8*len(mb_list))], mb_list[int(0.8*len(mb_list)):]
 
 print('\nTrain Images: {}\nVal Images: {}'.format(len(img_list_train), len(img_list_val)))
