@@ -38,8 +38,7 @@ if __name__ =='__main__':
     
     os.makedirs(os.path.join(args.root, args.name), exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print('Using device:', device)
-    print()
+    print('\nUsing device:', device)
     #Additional Info when using cuda
     if device.type == 'cuda':
         print(torch.cuda.get_device_name(0))
@@ -119,11 +118,11 @@ if __name__ =='__main__':
         ckpts = glob.glob(os.path.join(args.root, args.name, 'checkpoint_epoch=*.pt'))
         if len(ckpts) == 0:
             args.resume = False
-            print('No checkpoints found. Beginning from epoch #0')
+            print('\nNo checkpoints found. Beginning from epoch #0')
         else:
             ckpts = [{'path': p, 'epoch': int(p.split('_')[-1][:-3].split('=')[-1])} for p in ckpts]
             ckpt = sorted(ckpts, key=lambda d: d['epoch'])[-1]
-            print('Resuming from epoch #{}'.format(ckpt['epoch']))
+            print('\nResuming from epoch #{}'.format(ckpt['epoch']))
             print(torch.load(ckpt['path'], map_location=device)["wandb"])
 
     wandb.init(
@@ -161,24 +160,15 @@ if __name__ =='__main__':
     else:
         start_epoch = 0
         
-    print("*"*10)
     if args.synth:
-        print("dataloaders get_synth_data")
         your_train_data, your_eval_data = dataloaders.get_synth_data(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-        print("dataloaders get_synth_data loaded!")
     else:
-        print("dataloaders get_mri_data")
         your_train_data, your_eval_data = dataloaders.get_mri_data(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-        print("dataloaders get_mri_data loaded!")    
-    print("*"*10)
-    dataset_output = your_train_data[0]
-    print("train dataset_output.keys() : ",dataset_output.keys())
-    
+    dataset_output = your_train_data[0]    
     dataset_output = your_eval_data[0]
-    print("val dataset_output.keys() : ",dataset_output.keys())
-
     train_loader = DataLoader(your_train_data, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(your_eval_data, batch_size=args.batch_size, shuffle=True)
+    print()
 
     for epoch in range(start_epoch, args.epochs):
         model.train()
