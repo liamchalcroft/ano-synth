@@ -518,8 +518,8 @@ def val_epoch_molvae(val_loader, model, device, amp, epoch):
                 recons_loss = mol(reconstruction, images)
                 kl_loss = kld(z_mu, 2*(z_sigma).log())
             if val_step < 16:
-                inputs.append(images[0].cpu().float())
-                recons.append(reconstruction[0].cpu().float())
+                inputs.append(images[0].cpu().float().mean(0, keepdim=True))
+                recons.append(reconstruction[0].cpu().float().mean(0, keepdim=True))
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
