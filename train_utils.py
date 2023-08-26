@@ -50,8 +50,8 @@ def scale_pixels(img, bits):
 
 def mol(logits, targets, bits=32, min_pix_value=0., max_pix_value=1.):
     bit_classes = 2. ** bits - 1.
-    min_pix_value = scale_pixels(min, bits)
-    max_pix_value = scale_pixels(max, bits)
+    min_pix_value = scale_pixels(min_pix_value, bits)
+    max_pix_value = scale_pixels(max_pix_value, bits)
     B, C, H, W = targets.size()
     if C == 1:
         targets = torch.cat(3*[targets], dim=1)
