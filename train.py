@@ -132,7 +132,7 @@ if __name__ =='__main__':
         wandb.config.update(args)
     wandb.watch(model)
 
-    opt = torch.optim.Adam(model.parameters(), args.lr)
+    opt = torch.optim.AdamW(model.parameters(), args.lr)
     def lambda1(epoch):
         return (1 - epoch / args.epochs) ** 0.9
     lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
