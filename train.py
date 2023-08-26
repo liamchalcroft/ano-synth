@@ -22,6 +22,7 @@ if __name__ =='__main__':
     parser.add_argument("--beta_init", type=int, default=0, help="Initial beta (for BetaVAE only).")
     parser.add_argument("--beta_final", type=int, default=20, help="Final beta (for BetaVAE only).")
     parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
+    parser.add_argument("--mixtures", type=int, default=10, help="Number of mixtures for MOLVAE.")
     parser.add_argument("--synth", action='store_true', help="Use synthetic training data.")
     parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
     parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
@@ -88,6 +89,20 @@ if __name__ =='__main__':
             spatial_dims=2,
             in_channels=1,
             out_channels=1,
+            num_channels=(16,16,32,64,128,128),
+            num_res_blocks=2,
+            norm_num_groups=16,
+            with_encoder_nonlocal_attn=False,
+            with_decoder_nonlocal_attn=False,
+            attention_levels=(False,False,False,False,False,False),
+            use_convtranspose=False,
+            latent_channels=128,
+        ).to(device)
+    elif args.model == 'MOLVAE':
+        model = AutoencoderKL(
+            spatial_dims=2,
+            in_channels=1,
+            out_channels=args.mixtures * (3 * 3 + 1),
             num_channels=(16,16,32,64,128,128),
             num_res_blocks=2,
             norm_num_groups=16,
@@ -175,6 +190,8 @@ if __name__ =='__main__':
             train_iter = train_utils.train_epoch_betavae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, betas[epoch], args.amp)
         elif args.model == 'GaussVAE':
             train_iter = train_utils.train_epoch_gaussvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
+        elif args.model == 'MOLVAE':
+            train_iter = train_utils.train_epoch_molvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         elif args.model == 'VQVAE':
             train_iter = train_utils.train_epoch_vqvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         lr_scheduler.step()
@@ -189,6 +206,8 @@ if __name__ =='__main__':
                 train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'GaussVAE':
                 train_utils.val_epoch_gaussvae(val_loader, model, device, args.amp, epoch)
+            elif args.model == 'MOLVAE':
+                train_utils.val_epoch_molvae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'VQVAE':
                 train_utils.val_epoch_vqvae(val_loader, model, device, args.amp, epoch)
             torch.save(
