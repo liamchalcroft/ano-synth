@@ -320,7 +320,7 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
     return train_iter
 
-def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
+def train_epoch_molvae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
     model.train()
     epoch_loss = 0
     kld_loss = 0
