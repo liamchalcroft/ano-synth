@@ -252,7 +252,7 @@ class VQVAEResidualUnit(nn.Module):
         spatial_dims: int,
         num_channels: int,
         num_res_channels: int,
-        act: tuple | str | None = Act.RELU,
+        act: tuple | str | None = Act.PRELU,
         dropout: float = 0.0,
         bias: bool = True,
     ) -> None:
@@ -284,7 +284,7 @@ class VQVAEResidualUnit(nn.Module):
         )
 
     def forward(self, x):
-        return torch.nn.functional.relu(x + self.conv2(self.conv1(x)), True)
+        return torch.nn.functional.leaky_relu(x + self.conv2(self.conv1(x)), True)
 
 
 class VQVAEEncoder(nn.Module):
@@ -526,7 +526,7 @@ class VQVAE(nn.Module):
         decay: float = 0.5,
         epsilon: float = 1e-5,
         dropout: float = 0.0,
-        act: tuple | str | None = Act.RELU,
+        act: tuple | str | None = Act.PRELU,
         output_act: tuple | str | None = None,
         ddp_sync: bool = True,
         use_checkpointing: bool = False,
