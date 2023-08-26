@@ -127,15 +127,14 @@ def sample_from_mol(logits, targets, bits=32, min_pix_value=0., max_pix_value=1.
     model_means = l[:, :, :M, :, :]
     scales = compute_scales(l[:, :, M: 2 * M, :, :])
     model_coeffs = torch.tanh(l[:, :, 2 * M: 3 * M, :, :])
-    gumbel_noise = -torch.log(-torch.log(torch.Tensor(logit_probs.size(), 
-                            device=logits.device).uniform_(1e-5, 1. - 1e-5)))
+    gumbel_noise = -torch.log(-torch.log(torch.Tensor(logit_probs.size()).uniform_(1e-5, 1. - 1e-5))).to(logits.device)
     logit_probs = logit_probs / temp + gumbel_noise
     lambda_ = one_hot(torch.argmax(logit_probs, dim=1), logit_probs.size(1), dim=1)
     lambda_ = lambda_.unsqueeze(1)
     means = torch.sum(model_means * lambda_, dim=2)
     scales = torch.sum(scales * lambda_, dim=2)
     coeffs = torch.sum(model_coeffs * lambda_, dim=2)
-    u = torch.Tensor(means.size(), device=logits.device).uniform_(1e-5, 1. - 1e-5)
+    u = torch.Tensor(means.size()).uniform_(1e-5, 1. - 1e-5).to(logits.device)
     x = means + scales * temp * (torch.log(u) - torch.log(1. - u))
     x0 = torch.clamp(x[:, 0:1, :, :], min=min_pix_value, max=max_pix_value)
     x1 = torch.clamp(x[:, 1:2, :, :] + coeffs[:, 0:1, :, :] * x0, min=min_pix_value, max=max_pix_value)
