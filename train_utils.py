@@ -120,7 +120,7 @@ def sample_from_mol(logits, targets, bits=32, min_pix_value=0., max_pix_value=1.
         targets = torch.cat(3*[targets], dim=1)
         C = targets.size(1)
     assert C == 3
-    M = logits.size(1) / (3 * C + 1)
+    M = logits.size(1) // (3 * C + 1)
     logit_probs = logits[:, :M, :, :]
     l = logits[:, M:, :, :]
     l = l.reshape(B, C, 3 * M, H, W)
