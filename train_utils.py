@@ -513,7 +513,7 @@ def val_epoch_molvae(val_loader, model, device, amp, epoch):
         for val_step, batch in progress_bar:
             images = batch["image"].to(device)
             with ctx:
-                reconstruction, recon_sigma, z_mu, z_sigma = model(images)
+                reconstruction, z_mu, z_sigma = model(images)
                 reconstruction = sample_from_mol(reconstruction, images)
                 recons_loss = mol(reconstruction, images)
                 kl_loss = kld(z_mu, 2*(z_sigma).log())
