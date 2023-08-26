@@ -59,6 +59,7 @@ def mol(logits, targets, bits=32, min_pix_value=0., max_pix_value=1.):
     assert C == 3
     M = logits.size(1) / (3 * C + 1)
     targets = targets.unsqueeze(2)
+    print(M)
     logit_probs = logits[:, :M, :, :]
     l = logits[:, M:, :, :]
     l = l.reshape(B, C, 3 * M, H, W)
