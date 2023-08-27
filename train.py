@@ -26,7 +26,8 @@ if __name__ =='__main__':
     parser.add_argument("--synth", action='store_true', help="Use synthetic training data.")
     parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
     parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
-    parser.add_argument("--resume", action='store_true', help="Find most recent run in output dir and resume from last checkpoint.")
+    parser.add_argument("--resume", action='store_true', help="Resume from last checkpoint.")
+    parser.add_argument("--resume_best", action='store_true', help="Resume from checkpoint with highest SSIM.")
     parser.add_argument("--root", type=str, default='./', help="Root dir to save output directory within.")
     args = parser.parse_args()
     
@@ -123,8 +124,8 @@ if __name__ =='__main__':
             embedding_dim=128,
         ).to(device)
 
-    if args.resume:
-        ckpts = glob.glob(os.path.join(args.root, args.name, 'checkpoint.pt'))
+    if args.resume or args.resume_best:
+        ckpts = glob.glob(os.path.join(args.root, args.name, 'checkpoint.pt' if args.resume else 'checkpoint_best.pt'))
         if len(ckpts) == 0:
             args.resume = False
             print('\nNo checkpoints found. Beginning from epoch #0')
@@ -165,14 +166,23 @@ if __name__ =='__main__':
         def state_dict(self):
             return self.epoch
         
+    class Metric:
+        def __init__(self, metric):
+            self.metric = metric
+
+        def state_dict(self):
+            return self.metric
+        
     # Try to load most recent weight
     if args.resume:
         model.load_state_dict(checkpoint["net"])
         opt.load_state_dict(checkpoint["opt"])
         lr_scheduler.load_state_dict(checkpoint["lr"])
         start_epoch = checkpoint["epoch"]
+        metric_best = checkpoint["metric"]
     else:
         start_epoch = 0
+        metric_best = 0
         
     if args.synth:
         your_train_data, your_eval_data = dataloaders.get_synth_data(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
@@ -204,24 +214,37 @@ if __name__ =='__main__':
         if (epoch + 1) % args.val_interval == 0:
             model.eval()
             if args.model == 'AE':
-                train_utils.val_epoch_ae(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_ae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'VAE':
-                train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'BetaVAE':
-                train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'GaussVAE':
-                train_utils.val_epoch_gaussvae(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_gaussvae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'MOLVAE':
-                train_utils.val_epoch_molvae(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_molvae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'VQVAE':
-                train_utils.val_epoch_vqvae(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_vqvae(val_loader, model, device, args.amp, epoch)
+            if metric > metric_best:
+                metric_best = metric
+                torch.save(
+                    {
+                        "net": model.state_dict(),
+                        "opt": opt.state_dict(),
+                        "lr": lr_scheduler.state_dict(),
+                        "wandb": WandBID(wandb.run.id).state_dict(),
+                        "epoch": Epoch(epoch).state_dict(),
+                        "metric": Metric(metric_best).state_dict()
+                    },
+                    os.path.join(args.root, args.name,'checkpoint_best.pt'.format(epoch)))
             torch.save(
                 {
                     "net": model.state_dict(),
                     "opt": opt.state_dict(),
                     "lr": lr_scheduler.state_dict(),
                     "wandb": WandBID(wandb.run.id).state_dict(),
-                    "epoch": Epoch(epoch).state_dict()
+                    "epoch": Epoch(epoch).state_dict(),
+                    "metric": Metric(metric_best).state_dict()
                 },
                 os.path.join(args.root, args.name,'checkpoint.pt'.format(epoch)))
             
