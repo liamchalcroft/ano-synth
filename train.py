@@ -130,7 +130,7 @@ if __name__ =='__main__':
             args.resume = False
             print('\nNo checkpoints found. Beginning from epoch #0')
         else:
-            checkpoint = torch.load(ckpts[0]['path'], map_location=device)
+            checkpoint = torch.load(ckpts[0], map_location=device)
             print('\nResuming from epoch #{} with WandB ID {}'.format(checkpoint['epoch'], checkpoint["wandb"]))
     print()
 
