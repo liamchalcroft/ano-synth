@@ -158,6 +158,13 @@ if __name__ =='__main__':
 
         def state_dict(self):
             return self.wandb_id
+
+    class Epoch:
+        def __init__(self, epoch):
+            self.epoch = epoch
+
+        def state_dict(self):
+            return self.epoch
         
     # Try to load most recent weight
     if args.resume:
@@ -165,7 +172,7 @@ if __name__ =='__main__':
         model.load_state_dict(checkpoint["net"])
         opt.load_state_dict(checkpoint["opt"])
         lr_scheduler.load_state_dict(checkpoint["lr"])
-        start_epoch = int(ckpt['epoch'])
+        start_epoch = checkpoint["epoch"]
     else:
         start_epoch = 0
         
@@ -215,7 +222,8 @@ if __name__ =='__main__':
                     "net": model.state_dict(),
                     "opt": opt.state_dict(),
                     "lr": lr_scheduler.state_dict(),
-                    "wandb": WandBID(wandb.run.id).state_dict()
+                    "wandb": WandBID(wandb.run.id).state_dict(),
+                    "epoch": Epoch(epoch).state_dict()
                 },
-                os.path.join(args.root, args.name,'checkpoint_epoch={}.pt'.format(epoch)))
+                os.path.join(args.root, args.name,'checkpoint.pt'.format(epoch)))
             
