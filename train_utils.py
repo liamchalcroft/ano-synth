@@ -31,24 +31,71 @@ def gauss_l2(x_mu, x_sigma, x):
     squared_diff_normed = torch.true_divide(squared_difference, x_var)
     return 0.5 * (torch.log(2 * torch.tensor(math.pi, dtype=x.dtype, device=x.device)) + x_log_var + squared_diff_normed).mean(-1)
 
+def _fspecial_gauss_1d(size, sigma):
+    # https://github.com/VainF/pytorch-msssim
+    coords = torch.arange(size, dtype=torch.float)
+    coords -= size // 2
+    g = torch.exp(-(coords ** 2) / (2 * sigma ** 2))
+    g /= g.sum()
+    return g.unsqueeze(0).unsqueeze(0)
+
+def gaussian_filter(input, win):
+    # https://github.com/VainF/pytorch-msssim
+    assert all([ws == 1 for ws in win.shape[1:-1]]), win.shape
+    if len(input.shape) == 4:
+        conv = torch.nn.functional.conv2d
+    elif len(input.shape) == 5:
+        conv = torch.nn.functional.conv3d
+    C = input.shape[1]
+    out = input
+    for i, s in enumerate(input.shape[2:]):
+        out = conv(out, weight=win.transpose(2 + i, -1), stride=1, padding=0, groups=C)
+    return out
+
+def ssim(X, Y, data_range=1., K=(0.01, 0.03)):
+    # https://github.com/VainF/pytorch-msssim
+    K1, K2 = K
+    win = _fspecial_gauss_1d(11, 1.5)
+    win = win.repeat([X.shape[1]] + [1] * (len(X.shape) - 1))
+    compensation = 1.0
+    C1 = (K1 * data_range) ** 2
+    C2 = (K2 * data_range) ** 2
+    win = win.to(X.device, dtype=X.dtype)
+    mu1 = gaussian_filter(X, win)
+    mu2 = gaussian_filter(Y, win)
+    mu1_sq = mu1.pow(2)
+    mu2_sq = mu2.pow(2)
+    mu1_mu2 = mu1 * mu2
+    sigma1_sq = compensation * (gaussian_filter(X * X, win) - mu1_sq)
+    sigma2_sq = compensation * (gaussian_filter(Y * Y, win) - mu2_sq)
+    sigma12 = compensation * (gaussian_filter(X * Y, win) - mu1_mu2)
+    cs_map = (2 * sigma12 + C2) / (sigma1_sq + sigma2_sq + C2)
+    ssim_map = ((2 * mu1_mu2 + C1) / (mu1_sq + mu2_sq + C1)) * cs_map
+    ssim_per_channel = torch.flatten(ssim_map, 2).mean(-1)
+    return torch.relu(ssim_per_channel).mean()
+
 def compute_scales(logits):
+    # https://github.com/Rayhane-mamah/Efficient-VDVAE
     softplus = torch.nn.Softplus(beta=0.6931472)
     scales = torch.maximum(softplus(logits), torch.as_tensor(np.exp(-250.)))
     return scales
 
 def _compute_inv_stdv(logits):
+    # https://github.com/Rayhane-mamah/Efficient-VDVAE
     scales = compute_scales(logits)
     inv_stdv = 1. / scales
     log_scales = torch.log(scales)
     return inv_stdv, log_scales
 
 def scale_pixels(img, bits):
+    # https://github.com/Rayhane-mamah/Efficient-VDVAE
     img = np.floor(img / np.uint8(2 ** (8 - bits))) * 2 ** (8 - bits)
     shift = scale = (2 ** 8 - 1) / 2
     img = (img - shift) / scale
     return img
 
 def mol(logits, targets, bits=32, min_pix_value=0., max_pix_value=1.):
+    # https://github.com/Rayhane-mamah/Efficient-VDVAE
     bit_classes = 2. ** bits - 1.
     min_pix_value = scale_pixels(min_pix_value, bits)
     max_pix_value = scale_pixels(max_pix_value, bits)
@@ -103,6 +150,7 @@ def mol(logits, targets, bits=32, min_pix_value=0., max_pix_value=1.):
     return loss, avg_loss, model_means, log_scales
 
 def one_hot(indices, depth, dim):
+    # https://github.com/Rayhane-mamah/Efficient-VDVAE
     indices = indices.unsqueeze(dim)
     size = list(indices.size())
     size[dim] = depth
@@ -112,6 +160,7 @@ def one_hot(indices, depth, dim):
     return y_onehot
 
 def sample_from_mol(logits, targets, bits=32, min_pix_value=0., max_pix_value=1., temp=1.):
+    # https://github.com/Rayhane-mamah/Efficient-VDVAE
     bit_classes = 2. ** bits - 1.
     min_pix_value = scale_pixels(min_pix_value, bits)
     max_pix_value = scale_pixels(max_pix_value, bits)
