@@ -124,14 +124,13 @@ if __name__ =='__main__':
         ).to(device)
 
     if args.resume:
-        ckpts = glob.glob(os.path.join(args.root, args.name, 'checkpoint_epoch=*.pt'))
+        ckpts = glob.glob(os.path.join(args.root, args.name, 'checkpoint.pt'))
         if len(ckpts) == 0:
             args.resume = False
             print('\nNo checkpoints found. Beginning from epoch #0')
         else:
-            ckpts = [{'path': p, 'epoch': int(p.split('_')[-1][:-3].split('=')[-1])} for p in ckpts]
-            ckpt = sorted(ckpts, key=lambda d: d['epoch'])[-1]
-            print('\nResuming from epoch #{} with WandB ID {}'.format(ckpt['epoch'],torch.load(ckpt['path'], map_location=device)["wandb"]))
+            checkpoint = torch.load(ckpts[0]['path'], map_location=device)
+            print('\nResuming from epoch #{} with WandB ID {}'.format(checkpoint['epoch'], checkpoint["wandb"]))
     print()
 
     wandb.init(
@@ -141,7 +140,7 @@ if __name__ =='__main__':
         name=args.name,
         settings=wandb.Settings(start_method="fork"),
         resume="must" if args.resume else None,
-        id=torch.load(ckpt['path'], map_location=device)["wandb"] if args.resume else None,
+        id=checkpoint["wandb"] if args.resume else None,
     )
     if not args.resume:
         wandb.config.update(args)
@@ -168,7 +167,6 @@ if __name__ =='__main__':
         
     # Try to load most recent weight
     if args.resume:
-        checkpoint = torch.load(ckpt['path'], map_location=device) 
         model.load_state_dict(checkpoint["net"])
         opt.load_state_dict(checkpoint["opt"])
         lr_scheduler.load_state_dict(checkpoint["lr"])
