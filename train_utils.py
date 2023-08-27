@@ -466,6 +466,7 @@ def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch,
 
 def val_epoch_ae(val_loader, model, device, amp, epoch):
     val_loss = 0
+    ssim_loss = 0
     inputs = []
     recons = []
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
@@ -478,6 +479,7 @@ def val_epoch_ae(val_loader, model, device, amp, epoch):
                 reconstruction = model(images)
                 reconstruction = torch.sigmoid(reconstruction)
                 recons_loss = l2(reconstruction, images)
+                _ssim = ssim(reconstruction, images)
             if val_step < 16:
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
@@ -487,12 +489,17 @@ def val_epoch_ae(val_loader, model, device, amp, epoch):
                 wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
                                             wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
             val_loss += recons_loss.sum().item()
-            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1)})
+            ssim_loss += _ssim.item()
+            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1),
+                                      "ssim": ssim_loss / (val_step + 1)})
     wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
+    wandb.log({"val/ssim": ssim_loss / (val_step + 1)})
+    return ssim_loss / (val_step + 1)
 
 def val_epoch_vae(val_loader, model, device, amp, epoch):
     val_loss = 0
     kld_loss = 0
+    ssim_loss = 0
     inputs = []
     recons = []
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
@@ -506,6 +513,7 @@ def val_epoch_vae(val_loader, model, device, amp, epoch):
                 reconstruction = torch.sigmoid(reconstruction)
                 recons_loss = l2(reconstruction, images)
                 kl_loss = kld(z_mu, 2*(z_sigma).log())
+                _ssim = ssim(reconstruction, images)
             if val_step < 16:
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
@@ -516,13 +524,19 @@ def val_epoch_vae(val_loader, model, device, amp, epoch):
                                             wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
             val_loss += recons_loss.sum().item()
             kld_loss += kl_loss.sum().item()
-            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "kld_loss": kld_loss / (val_step + 1)})
+            ssim_loss += _ssim.item()
+            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1),
+                                      "kld_loss": kld_loss / (val_step + 1),
+                                      "ssim": ssim_loss / (val_step + 1)})
     wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
     wandb.log({"val/kld_loss": kld_loss / (val_step + 1)})
+    wandb.log({"val/ssim": ssim_loss / (val_step + 1)})
+    return ssim_loss / (val_step + 1)
 
 def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
     val_loss = 0
     kld_loss = 0
+    ssim_loss = 0
     inputs = []
     recons = []
     sigmas = []
@@ -537,6 +551,7 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
                 reconstruction = torch.sigmoid(reconstruction)
                 recons_loss = gauss_l2(reconstruction, recon_sigma, images)
                 kl_loss = kld(z_mu, 2*(z_sigma).log())
+                _ssim = ssim(reconstruction, images)
             if val_step < 16:
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
@@ -550,16 +565,21 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
                                             wandb.Image(grid_sigmas[0].numpy(), caption="Uncertanties")]})
             val_loss += recons_loss.sum().item()
             kld_loss += kl_loss.sum().item()
-            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "kld_loss": kld_loss / (val_step + 1)})
+            ssim_loss += _ssim.item()
+            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1),
+                                      "kld_loss": kld_loss / (val_step + 1),
+                                      "ssim": ssim_loss / (val_step + 1)})
     wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
     wandb.log({"val/kld_loss": kld_loss / (val_step + 1)})
+    wandb.log({"val/ssim": ssim_loss / (val_step + 1)})
+    return ssim_loss / (val_step + 1)
 
 def val_epoch_molvae(val_loader, model, device, amp, epoch):
     val_loss = 0
     kld_loss = 0
+    ssim_loss = 0
     inputs = []
     recons = []
-    sigmas = []
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
     progress_bar = tqdm(enumerate(val_loader), total=len(val_loader), ncols=110)
     progress_bar.set_description(f"[Validation] Epoch {epoch}")
@@ -568,9 +588,10 @@ def val_epoch_molvae(val_loader, model, device, amp, epoch):
             images = batch["image"].to(device)
             with ctx:
                 reconstruction, z_mu, z_sigma = model(images)
-                reconstruction = sample_from_mol(reconstruction, images)
                 recons_loss = mol(reconstruction, images)
+                reconstruction = sample_from_mol(reconstruction, images)
                 kl_loss = kld(z_mu, 2*(z_sigma).log())
+                _ssim = ssim(reconstruction, images)
             if val_step < 16:
                 inputs.append(images[0].cpu().float().mean(0, keepdim=True))
                 recons.append(reconstruction[0].cpu().float().mean(0, keepdim=True))
@@ -581,13 +602,19 @@ def val_epoch_molvae(val_loader, model, device, amp, epoch):
                                             wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
             val_loss += recons_loss.sum().item()
             kld_loss += kl_loss.sum().item()
-            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "kld_loss": kld_loss / (val_step + 1)})
+            ssim_loss += _ssim.item()
+            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1),
+                                      "kld_loss": kld_loss / (val_step + 1),
+                                      "ssim": ssim_loss / (val_step + 1)})
     wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
     wandb.log({"val/kld_loss": kld_loss / (val_step + 1)})
+    wandb.log({"val/ssim": ssim_loss / (val_step + 1)})
+    return ssim_loss / (val_step + 1)
 
 def val_epoch_vqvae(val_loader, model, device, amp, epoch):
     val_loss = 0
     val_quant = 0
+    ssim_loss = 0
     inputs = []
     recons = []
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
@@ -600,6 +627,7 @@ def val_epoch_vqvae(val_loader, model, device, amp, epoch):
                 reconstruction, quantization_loss = model(images)
                 reconstruction = torch.sigmoid(reconstruction)
                 recons_loss = l2(reconstruction, images)
+                _ssim = ssim(reconstruction, images)
             if val_step < 16:
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
@@ -610,6 +638,11 @@ def val_epoch_vqvae(val_loader, model, device, amp, epoch):
                                             wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
             val_loss += recons_loss.sum().item()
             val_quant += quantization_loss.sum().item()
-            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1), "quantization_loss": val_quant / (val_step + 1)})
+            ssim_loss += _ssim.item()
+            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1),
+                                      "quantization_loss": val_quant / (val_step + 1),
+                                      "ssim": ssim_loss / (val_step + 1)})
     wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
     wandb.log({"val/quant_loss": val_quant / (val_step + 1)})
+    wandb.log({"val/ssim": ssim_loss / (val_step + 1)})
+    return ssim_loss / (val_step + 1)
