@@ -94,7 +94,7 @@ def rae_penalty(model, x, z):
         z.requires_grad = True
     with torch.set_grad_enabled(True):
         grad = torch.autograd.grad(
-            outputs=l2(torch.sigmoid(model.decode(z)), x),
+            outputs=l2(torch.sigmoid(model.decode(z)), x).sum(),
             inputs=z,
             create_graph=True,
         )[0]
@@ -108,7 +108,7 @@ def samba_l2(model, x, z_mu, z_std):
         z_mu.requires_grad = True
     with torch.set_grad_enabled(True):
         grad = torch.autograd.grad(
-            outputs=l2(torch.sigmoid(model.decode(z_mu)), x),
+            outputs=l2(torch.sigmoid(model.decode(z_mu)), x).sum(),
             inputs=z_mu,
             create_graph=True,
         )[0]
