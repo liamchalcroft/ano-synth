@@ -44,7 +44,7 @@ if __name__ =='__main__':
         print('Allocated:', round(torch.cuda.memory_allocated(0)/1024**3,1), 'GB')
         print('Cached:   ', round(torch.cuda.memory_reserved(0)/1024**3,1), 'GB')
     
-    if args.model == 'AE':
+    if args.model in ['AE', 'RAE']:
         model = Autoencoder(
             spatial_dims=2,
             in_channels=1,
@@ -58,7 +58,7 @@ if __name__ =='__main__':
             use_convtranspose=False,
             latent_channels=128,
         ).to(device)
-    elif args.model == 'VAE':
+    elif args.model in ['SAMBA', 'VAE']:
         model = AutoencoderKL(
             spatial_dims=2,
             in_channels=1,
@@ -201,6 +201,10 @@ if __name__ =='__main__':
         model.train()
         if args.model == 'AE':
             train_iter = train_utils.train_epoch_ae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
+        elif args.model == 'RAE':
+            train_iter = train_utils.train_epoch_rae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
+        elif args.model == 'SAMBA':
+            train_iter = train_utils.train_epoch_samba(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         elif args.model == 'VAE':
             train_iter = train_utils.train_epoch_vae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         elif args.model == 'BetaVAE':
@@ -217,6 +221,10 @@ if __name__ =='__main__':
             model.eval()
             if args.model == 'AE':
                 metric = train_utils.val_epoch_ae(val_loader, model, device, args.amp, epoch)
+            elif args.model == 'RAE':
+                metric = train_utils.val_epoch_rae(val_loader, model, device, args.amp, epoch)
+            elif args.model == 'SAMBA':
+                metric = train_utils.val_epoch_samba(val_loader, model, device, args.amp, epoch)
             elif args.model == 'VAE':
                 metric = train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'BetaVAE':
