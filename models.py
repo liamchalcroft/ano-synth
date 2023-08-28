@@ -1407,7 +1407,7 @@ class AutoencoderKL(nn.Module):
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         z_mu, z_sigma = self.encode(x)
-        z = self.sampling(z_mu, z_sigma)
+        z = self.sampling(z_mu, z_sigma) if self.training else z_mu
         reconstruction = self.decode(z)
         return reconstruction, z_mu, z_sigma
 
@@ -1795,7 +1795,7 @@ class GaussAutoencoderKL(nn.Module):
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         z_mu, z_sigma = self.encode(x)
-        z = self.sampling(z_mu, z_sigma)
+        z = self.sampling(z_mu, z_sigma) if self.training else z_mu
         reconstruction, recon_log_var = self.decode(z)
         recon_log_var = torch.clamp(recon_log_var, -10.0, 1.0)
         recon_sigma = torch.exp(recon_log_var / 2)
