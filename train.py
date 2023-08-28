@@ -22,6 +22,7 @@ if __name__ =='__main__':
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
     parser.add_argument("--beta_init", type=int, default=0, help="Initial beta (for BetaVAE only).")
     parser.add_argument("--beta_final", type=int, default=20, help="Final beta (for BetaVAE only).")
+    parser.add_argument("--beta_cycles", type=int, default=1, help="Number of beta cycles (for BetaVAE only).")
     parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
     parser.add_argument("--mixtures", type=int, default=10, help="Number of mixtures for MOLVAE.")
     parser.add_argument("--synth", action='store_true', help="Use synthetic training data.")
@@ -87,7 +88,7 @@ if __name__ =='__main__':
             use_convtranspose=False,
             latent_channels=128,
         ).to(device)
-        betas = list(range(args.beta_init, args.beta_final, args.epochs))
+        betas = list(range(args.beta_init, args.beta_final, args.epochs//args.beta_cycles)) * args.beta_cycles
     elif args.model == 'GaussVAE':
         model = GaussAutoencoderKL(
             spatial_dims=2,
