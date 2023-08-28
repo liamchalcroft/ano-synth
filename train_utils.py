@@ -74,6 +74,50 @@ def ssim(X, Y, data_range=1., K=(0.01, 0.03)):
     ssim_per_channel = torch.flatten(ssim_map, 2).mean(-1)
     return torch.relu(ssim_per_channel).mean()
 
+def decoder_jacobian(model, x, z, loss):
+    # https://github.com/rpatrik96/vae-sam
+    if model.training is False:
+        z.requires_grad = True
+    with torch.set_grad_enabled(True):
+        grad = torch.autograd.grad(
+            outputs=loss(model.decoder(z), x),
+            inputs=z,
+            create_graph=True,
+        )[0]
+    if model.training is False:
+        z.requires_grad = False
+    return grad
+
+def rae_penalty(model, x, z):
+    # https://github.com/rpatrik96/vae-sam
+    if model.training is False:
+        z.requires_grad = True
+    with torch.set_grad_enabled(True):
+        grad = torch.autograd.grad(
+            outputs=l2(torch.sigmoid(model.decode(z)), x),
+            inputs=z,
+            create_graph=True,
+        )[0]
+    if model.training is False:
+        z.requires_grad = False
+    return grad.norm(p=2.)
+
+def samba_l2(model, x, z_mu, z_std):
+    # https://github.com/rpatrik96/vae-sam
+    if model.training is False:
+        z_mu.requires_grad = True
+    with torch.set_grad_enabled(True):
+        grad = torch.autograd.grad(
+            outputs=l2(torch.sigmoid(model.decode(z_mu)), x),
+            inputs=z_mu,
+            create_graph=True,
+        )[0]
+    if model.training is False:
+        z_mu.requires_grad = False
+    grad = grad * z_std.mean(0, keepdim=True).detach()
+    scale = (z_mu.size(1) ** 0.5) / grad.norm(p=2., dim=1, keepdim=True)
+    return l2(model.decode(z_mu + scale * z_std * grad), x)
+
 def compute_scales(logits):
     # https://github.com/Rayhane-mamah/Efficient-VDVAE
     softplus = torch.nn.Softplus(beta=0.6931472)
@@ -235,6 +279,102 @@ def train_epoch_ae(train_iter, epoch_length, train_loader, opt, model, epoch, de
         epoch_loss += recons_loss.sum().item()
         wandb.log({"train/recon_loss": recons_loss.sum().item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1)})
+    return train_iter
+
+def train_epoch_rae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
+    model.train()
+    epoch_loss = 0
+    grad_loss = 0
+    z_loss = 0
+    if amp:
+        ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu")
+        scaler = GradScaler()
+    else:
+        ctx = nullcontext()
+    progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
+    progress_bar.set_description(f"[Training] Epoch {epoch}")
+    if train_iter is None:
+        train_iter = iter(train_loader)
+    for step in progress_bar:
+        try:
+            batch = next(train_iter)
+        except:
+            train_iter = iter(train_loader)
+            batch = next(train_iter)
+        images = batch["image"].to(device)
+        opt.zero_grad(set_to_none=True)
+        with ctx:
+            z = model.encode(images)
+            reconstruction = model.decode(z)
+            reconstruction = torch.sigmoid(reconstruction)
+            recons_loss = l2(reconstruction, images)
+            grads_loss = rae_penalty(model, images, z)
+            zs_loss = z.norm(p=2.) / 2.
+            loss = recons_loss.sum() + grads_loss + 0.1 * zs_loss
+            assert loss.isnan().sum() == 0, "NaN found in loss!"
+        if amp:
+            scaler.scale(loss).backward()
+            scaler.unscale_(opt)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            scaler.step(opt)
+            scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            opt.step()
+        epoch_loss += recons_loss.sum().item()
+        grad_loss += grads_loss.item()
+        z_loss += zs_loss.item()
+        wandb.log({"train/recon_loss": recons_loss.sum().item(),
+                   "train/grad_loss": grads_loss.item(),
+                   "train/z_loss": zs_loss.item()})
+        progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1),
+                                  "grad_loss": grad_loss / (step + 1),
+                                  "z_loss": z_loss / (step + 1)})
+    return train_iter
+
+def train_epoch_samba(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
+    model.train()
+    epoch_loss = 0
+    kld_loss = 0
+    if amp:
+        ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu")
+        scaler = GradScaler()
+    else:
+        ctx = nullcontext()
+    progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
+    progress_bar.set_description(f"[Training] Epoch {epoch}")
+    if train_iter is None:
+        train_iter = iter(train_loader)
+    for step in progress_bar:
+        try:
+            batch = next(train_iter)
+        except:
+            train_iter = iter(train_loader)
+            batch = next(train_iter)
+        images = batch["image"].to(device)
+        opt.zero_grad(set_to_none=True)
+        with ctx:
+            z_mu, z_sigma = model.encode(images)
+            recons_loss = samba_l2(model, images, z_mu, z_sigma)
+            kl_loss = kld(z_mu, 2*(z_sigma).log())
+            loss = (recons_loss + kl_loss).sum()
+            assert loss.isnan().sum() == 0, "NaN found in loss!"
+        if amp:
+            scaler.scale(loss).backward()
+            scaler.unscale_(opt)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            scaler.step(opt)
+            scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            opt.step()
+        epoch_loss += recons_loss.sum().item()
+        kld_loss += kl_loss.sum().item()
+        wandb.log({"train/recon_loss": recons_loss.sum().item()})
+        wandb.log({"train/kld_loss": kl_loss.sum().item()})
+        progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
     return train_iter
 
 def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
@@ -493,6 +633,87 @@ def val_epoch_ae(val_loader, model, device, amp, epoch):
             progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1),
                                       "ssim": ssim_loss / (val_step + 1)})
     wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
+    wandb.log({"val/ssim": ssim_loss / (val_step + 1)})
+    return ssim_loss / (val_step + 1)
+
+def val_epoch_rae(val_loader, model, device, amp, epoch):
+    val_loss = 0
+    grad_loss = 0
+    z_loss = 0
+    ssim_loss = 0
+    inputs = []
+    recons = []
+    ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
+    progress_bar = tqdm(enumerate(val_loader), total=len(val_loader), ncols=110)
+    progress_bar.set_description(f"[Validation] Epoch {epoch}")
+    with torch.no_grad():
+        for val_step, batch in progress_bar:
+            images = batch["image"].to(device)
+            with ctx:
+                z = model.encode(images)
+                reconstruction = model.decode(z)
+                reconstruction = torch.sigmoid(reconstruction)
+                recons_loss = l2(reconstruction, images)
+                grads_loss = rae_penalty(model, images, z)
+                zs_loss = z.norm(p=2.) / 2.
+                _ssim = ssim(reconstruction, images)
+            if val_step < 16:
+                inputs.append(images[0].cpu().float())
+                recons.append(reconstruction[0].cpu().float())
+            elif val_step == 16:
+                grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
+                grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
+                wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
+                                            wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
+            val_loss += recons_loss.sum().item()
+            grad_loss += grads_loss.sum().item()
+            z_loss += zs_loss.sum().item()
+            ssim_loss += _ssim.item()
+            progress_bar.set_postfix({"recon_loss": val_loss / (val_step + 1),
+                                      "grad_loss": grad_loss / (val_step + 1),
+                                      "z_loss": z_loss / (val_step + 1),
+                                      "ssim": ssim_loss / (val_step + 1)})
+    wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
+    wandb.log({"val/grad_loss": grad_loss / (val_step + 1)})
+    wandb.log({"val/z_loss": z_loss / (val_step + 1)})
+    wandb.log({"val/ssim": ssim_loss / (val_step + 1)})
+    return ssim_loss / (val_step + 1)
+
+def val_epoch_samba(val_loader, model, device, amp, epoch):
+    val_loss = 0
+    kld_loss = 0
+    ssim_loss = 0
+    inputs = []
+    recons = []
+    ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
+    progress_bar = tqdm(enumerate(val_loader), total=len(val_loader), ncols=110)
+    progress_bar.set_description(f"[Validation] Epoch {epoch}")
+    with torch.no_grad():
+        for val_step, batch in progress_bar:
+            images = batch["image"].to(device)
+            with ctx:
+                z_mu, z_sigma = model.encode(images)
+                recons_loss = samba_l2(model, images, z_mu, z_sigma)
+                kl_loss = kld(z_mu, 2*(z_sigma).log())
+                reconstruction = model.decode(z_mu)
+                reconstruction = torch.sigmoid(reconstruction)
+                _ssim = ssim(reconstruction, images)
+            if val_step < 16:
+                inputs.append(images[0].cpu().float())
+                recons.append(reconstruction[0].cpu().float())
+            elif val_step == 16:
+                grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
+                grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
+                wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
+                                            wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
+            val_loss += recons_loss.sum().item()
+            kld_loss += kl_loss.sum().item()
+            ssim_loss += _ssim.item()
+            progress_bar.set_postfix({"recons_loss": val_loss / (val_step + 1),
+                                      "kld_loss": kld_loss / (val_step + 1),
+                                      "ssim": ssim_loss / (val_step + 1)})
+    wandb.log({"val/recon_loss": val_loss / (val_step + 1)})
+    wandb.log({"val/kld_loss": kld_loss / (val_step + 1)})
     wandb.log({"val/ssim": ssim_loss / (val_step + 1)})
     return ssim_loss / (val_step + 1)
 
