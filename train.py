@@ -13,7 +13,8 @@ if __name__ =='__main__':
     
     parser = argparse.ArgumentParser(argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--name", type=str, help="Name of WandB run.")
-    parser.add_argument("--model", type=str, help="Model to use. Full list of options available in Pythae docs.")
+    parser.add_argument("--model", type=str, help="Model to use.",
+                        choices=["AE", "RAE", "SAMBA", "VAE", "BetaVAE", "GaussVAE", "VQVAE"])
     parser.add_argument("--epochs", type=int, default=200, help="Number of epochs for training.")
     parser.add_argument("--epoch_length", type=int, default=100, help="Number of iterations per epoch.")
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
