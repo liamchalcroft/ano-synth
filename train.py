@@ -26,6 +26,7 @@ if __name__ =='__main__':
     parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
     parser.add_argument("--mixtures", type=int, default=10, help="Number of mixtures for MOLVAE.")
     parser.add_argument("--synth", action='store_true', help="Use synthetic training data.")
+    parser.add_argument("--mix", action='store_true', help="Use 50:50 mix of real and synthetic training data.")
     parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
     parser.add_argument("--amp", action='store_true', help="Use auto mixed precision in training.")
     parser.add_argument("--resume", action='store_true', help="Resume from last checkpoint.")
@@ -189,9 +190,11 @@ if __name__ =='__main__':
         metric_best = 0
         
     if args.synth:
-        your_train_data, your_eval_data = dataloaders.get_synth_data(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+        your_train_data, your_eval_data = dataloaders.get_synth_data()
+    elif args.mix:
+        your_train_data, your_eval_data = dataloaders.get_mix_data()
     else:
-        your_train_data, your_eval_data = dataloaders.get_mri_data(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+        your_train_data, your_eval_data = dataloaders.get_mri_data()
     dataset_output = your_train_data[0]    
     dataset_output = your_eval_data[0]
     train_loader = DataLoader(your_train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
