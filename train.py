@@ -148,7 +148,7 @@ if __name__ =='__main__':
         resume="must" if args.resume else None,
         id=checkpoint["wandb"] if args.resume else None,
     )
-    if not args.resume:
+    if not args.resume or args.resume_best:
         wandb.config.update(args)
     wandb.watch(model)
 
