@@ -179,7 +179,7 @@ if __name__ =='__main__':
             return self.metric
         
     # Try to load most recent weight
-    if args.resume:
+    if args.resume or args.resume_best:
         model.load_state_dict(checkpoint["net"])
         opt.load_state_dict(checkpoint["opt"])
         lr_scheduler.load_state_dict(checkpoint["lr"])
