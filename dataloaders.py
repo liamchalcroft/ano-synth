@@ -3,50 +3,56 @@ import monai as mn
 import numpy as np
 import os, glob
 
-img_list = glob.glob("oasis/*/aligned_norm.nii.gz")
+img_list = glob.glob("oasis_train/*/*_image.nii.gz")
 img_list_train, img_list_val = img_list[:int(0.9*len(img_list))], img_list[int(0.9*len(img_list)):]
 print("\nTrain Images: {}\nVal Images: {}".format(len(img_list_train), len(img_list_val)))
+preproc_list_train = [img.replace("image", "preproc") for img in img_list_train]
+preproc_list_val = [img.replace("image", "preproc") for img in img_list_val]
 
-def get_mri_data(device):
+def get_mri_data():
     train_transforms = mn.transforms.Compose([
-        mn.transforms.LoadImageD(keys=["image", "label"]),
-        mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
-        mn.transforms.ToTensorD(keys=["image", "label"], 
+        mn.transforms.LoadNiftiD(keys=["image"]),
+        mn.transforms.EnsureChannelFirstD(keys=["image"]),
+        mn.transforms.ToTensorD(keys=["image"], 
                                 dtype=float),
-        mn.transforms.SpacingD(keys=["image", "label"], pixdim=1, mode=["bilinear", "nearest"]),
-        mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear","nearest")),
+        mn.transforms.SpacingD(keys=["image"], pixdim=1, mode=["bilinear", "nearest"]),
+        mn.transforms.ResizeD(keys=["image"], spatial_size=(192,192), mode=("bilinear","nearest")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0.5, upper=99.5, b_min=0, b_max=1, clip=True),
-        mn.transforms.RandFlipD(keys=["image", "label"], spatial_axis=0, prob=0.5),
-        mn.transforms.RandFlipD(keys=["image", "label"], spatial_axis=1, prob=0.5),
-        mn.transforms.Rand2DElasticD(keys=["image", "label"], spacing=(10,10), magnitude_range=(50,150),
+        mn.transforms.RandFlipD(keys=["image"], spatial_axis=0, prob=0.5),
+        mn.transforms.RandFlipD(keys=["image"], spatial_axis=1, prob=0.5),
+        mn.transforms.Rand2DElasticD(keys=["image"], spacing=(10,10), magnitude_range=(50,150),
                                   rotate_range=30, shear_range=0.15, translate_range=0.5, scale_range=0.2,
                                   padding_mode="reflection", mode=("bilinear","nearest")),
     ])
     val_transforms = mn.transforms.Compose([
-        mn.transforms.LoadImageD(keys=["image", "label"]),
-        mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
-        mn.transforms.ToTensorD(keys=["image", "label"], 
+        mn.transforms.LoadNiftiD(keys=["image"]),
+        mn.transforms.EnsureChannelFirstD(keys=["image"]),
+        mn.transforms.ToTensorD(keys=["image"], 
                                 dtype=float),
-        mn.transforms.SpacingD(keys=["image", "label"], pixdim=1, mode=["bilinear", "nearest"]),
-        mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear","nearest")),
+        mn.transforms.SpacingD(keys=["image"], pixdim=1, mode=["bilinear", "nearest"]),
+        mn.transforms.ResizeD(keys=["image"], spatial_size=(192,192), mode=("bilinear","nearest")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0.5, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
-    subj_train = [{"image":img, "label":img.replace("norm","seg35")} for img in img_list_train]
-    subj_val = [{"image":img, "label":img.replace("norm","seg35")} for img in img_list_val]
+    subj_train = [{"image":img} for img in img_list_train+preproc_list_train]
+    subj_val = [{"image":img} for img in img_list_val+preproc_list_val]
     os.makedirs("tmp_data", exist_ok=True)
     data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
     data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
     return data_train, data_val
 
 
-def get_synth_data(device):
+def get_synth_data():
     train_transforms = mn.transforms.Compose([
-        mn.transforms.LoadImageD(keys=["label"]),
-        mn.transforms.EnsureChannelFirstD(keys=["label"]),
-        mn.transforms.ToTensorD(keys=["label"], 
+        mn.transforms.LoadNiftiD(keys=["image", "label"]),
+        mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
+        mn.transforms.ToTensorD(keys=["image", "label"], 
                                 dtype=int),
         mn.transforms.SpacingD(keys=["label"], pixdim=1, mode=["nearest"]),
-        GMMSynthD(mu=255, std=16, fwhm=5, gmm_fwhm=5),
+        mn.transforms.OneOf(transforms=[
+            mn.transforms.IdentityD(keys=["label"]),
+            mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
+        ]),
+        GMMSynthD(mu=255, std=16, gmm_fwhm=5),
         mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear","nearest")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0.5, upper=99.5, b_min=0, b_max=1, clip=True),
         mn.transforms.RandFlipD(keys=["image", "label"], spatial_axis=0, prob=0.5),
@@ -56,17 +62,71 @@ def get_synth_data(device):
                                   padding_mode="reflection", mode=("bilinear","nearest")),
     ])
     val_transforms = mn.transforms.Compose([
-        mn.transforms.LoadImageD(keys=["label"]),
-        mn.transforms.EnsureChannelFirstD(keys=["label"]),
-        mn.transforms.ToTensorD(keys=["label"], 
+        mn.transforms.LoadNiftiD(keys=["image", "label"]),
+        mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
+        mn.transforms.ToTensorD(keys=["image", "label"], 
                                 dtype=int),
         mn.transforms.SpacingD(keys=["label"], pixdim=1, mode=["nearest"]),
-        GMMSynthD(mu=255, std=16, fwhm=5, gmm_fwhm=5),
+        mn.transforms.OneOf(transforms=[
+            mn.transforms.IdentityD(keys=["label"]),
+            mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
+        ]),
+        GMMSynthD(mu=255, std=16, gmm_fwhm=5),
         mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear","nearest")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0.5, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
-    subj_train = [{"image":img, "label":img.replace("norm","seg35")} for img in img_list_train]
-    subj_val = [{"image":img, "label":img.replace("norm","seg35")} for img in img_list_val]
+    subj_train = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(10)]} for img in preproc_list_train]
+    subj_val = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(10)]} for img in preproc_list_val]
+    os.makedirs("tmp_data", exist_ok=True)
+    data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
+    data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
+    return data_train, data_val
+
+
+def get_mix_data():
+    train_transforms = mn.transforms.Compose([
+        mn.transforms.LoadNiftiD(keys=["image", "label"]),
+        mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
+        mn.transforms.ToTensorD(keys=["image", "label"], 
+                                dtype=int),
+        mn.transforms.SpacingD(keys=["label"], pixdim=1, mode=["nearest"]),
+        mn.transforms.OneOf(transforms=[
+            mn.transforms.IdentityD(keys=["label"]),
+            mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
+        ]),
+        mn.transforms.OneOf(transforms=[
+            mn.transforms.IdentityD(keys=["label"]),
+            GMMSynthD(mu=255, std=16, gmm_fwhm=5),
+        ]),
+        mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear","nearest")),
+        mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0.5, upper=99.5, b_min=0, b_max=1, clip=True),
+        mn.transforms.RandFlipD(keys=["image", "label"], spatial_axis=0, prob=0.5),
+        mn.transforms.RandFlipD(keys=["image", "label"], spatial_axis=1, prob=0.5),
+        mn.transforms.Rand2DElasticD(keys=["image", "label"], spacing=(10,10), magnitude_range=(50,150),
+                                  rotate_range=30, shear_range=0.15, translate_range=0.5, scale_range=0.2,
+                                  padding_mode="reflection", mode=("bilinear","nearest")),
+    ])
+    val_transforms = mn.transforms.Compose([
+        mn.transforms.LoadNiftiD(keys=["image", "label"]),
+        mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
+        mn.transforms.ToTensorD(keys=["image", "label"], 
+                                dtype=int),
+        mn.transforms.SpacingD(keys=["label"], pixdim=1, mode=["nearest"]),
+        mn.transforms.OneOf(transforms=[
+            mn.transforms.IdentityD(keys=["label"]),
+            mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
+        ]),
+        mn.transforms.OneOf(transforms=[
+            mn.transforms.IdentityD(keys=["label"]),
+            GMMSynthD(mu=255, std=16, gmm_fwhm=5),
+        ]),
+        mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear","nearest")),
+        mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0.5, upper=99.5, b_min=0, b_max=1, clip=True),
+    ])
+    subj_train = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(10)]} for img in preproc_list_train]\
+        + [{"image":img, "label":[img.replace("image","l{}".format(i)) for i in range(10)]} for img in img_list_train]
+    subj_val = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(10)]} for img in preproc_list_val]\
+        + [{"image":img, "label":[img.replace("image","l{}".format(i)) for i in range(10)]} for img in img_list_val]
     os.makedirs("tmp_data", exist_ok=True)
     data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
     data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
@@ -74,24 +134,18 @@ def get_synth_data(device):
 
 
 class GMMSynthD:
-    def __init__(self, mu=255, std=16, fwhm=5, gmm_fwhm=5):
+    def __init__(self, mu=255, std=16, gmm_fwhm=5):
         self.mu = mu
         self.std = std
-        self.fwhm = fwhm
         self.gmm_fwhm = gmm_fwhm
-        self.labmap = {
-            0:0, 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9,
-            10:10, 11:11, 12:12, 13:13, 14:14, 15:15, 16:16, 17:17, 18:18, 19:19,
-            20:1, 21:2, 22:3, 23:4, 24:5, 25:6, 26:7, 27:8, 28:9, 29:10,
-            30:14, 31:15, 32:16, 33:17, 34:18, 35:19
-        }
 
     def __call__(self, data):
         d = dict(data)
-        label = d["label"].int()
-        label.apply_(lambda val: self.labmap[val]) # map to symmetric mask
+        label = d["label"]
         labels = [
-            mn.transforms.GaussianSmooth(np.random.uniform(0, self.gmm_fwhm))(torch.normal(np.random.uniform(0, self.mu), np.random.uniform(0, self.std), label.shape) * (label==i))
-                   for i in range(20)] # sample random intensities for each tissue and apply within-tissue blurring
-        d["image"] = mn.transforms.GaussianSmooth(np.random.uniform(0, self.fwhm))(torch.stack(labels,0).sum(0)) # sum all tissues and apply whole-image blurring
+            mn.transforms.GaussianSmooth(np.random.uniform(0, self.gmm_fwhm))(torch.normal(np.random.uniform(0, self.mu), 
+                                                                                           np.random.uniform(0, self.std), 
+                                                                                           label.shape) * (label[i]))
+                   for i in range(label.size(0))] # sample random intensities for each tissue and apply within-tissue blurring
+        d["image"] = torch.stack(labels, 0).sum(0)
         return d
