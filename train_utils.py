@@ -310,7 +310,7 @@ def train_epoch_rae(train_iter, epoch_length, train_loader, opt, model, epoch, d
             recons_loss = l2(reconstruction, images)
             grads_loss = rae_penalty(model, images, z)
             zs_loss = z.norm(p=2.) / 2.
-            loss = recons_loss.sum() + grads_loss + 0.1 * zs_loss
+            loss = recons_loss.sum() + 0.1 * grads_loss + 0.01 * zs_loss
             assert loss.isnan().sum() == 0, "NaN found in loss!"
         if amp:
             scaler.scale(loss).backward()
@@ -358,7 +358,7 @@ def train_epoch_samba(train_iter, epoch_length, train_loader, opt, model, epoch,
             z_mu, z_sigma = model.encode(images)
             recons_loss = samba_l2(model, images, z_mu, z_sigma)
             kl_loss = kld(z_mu, 2*(z_sigma).log())
-            loss = (recons_loss + kl_loss).sum()
+            loss = (recons_loss + 0.01 * kl_loss).sum()
             assert loss.isnan().sum() == 0, "NaN found in loss!"
         if amp:
             scaler.scale(loss).backward()
@@ -403,7 +403,7 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
             reconstruction = torch.sigmoid(reconstruction)
             recons_loss = l2(reconstruction, images)
             kl_loss = kld(z_mu, 2*(z_sigma).log())
-            loss = (recons_loss + kl_loss).sum()
+            loss = (recons_loss + 0.01 * kl_loss).sum()
             assert loss.isnan().sum() == 0, "NaN found in loss!"
         if amp:
             scaler.scale(loss).backward()
@@ -493,7 +493,7 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
             reconstruction = torch.sigmoid(reconstruction)
             recons_loss = gauss_l2(reconstruction, recon_sigma, images)
             kl_loss = kld(z_mu, 2*z_sigma.log())
-            loss = (recons_loss + kl_loss).sum()
+            loss = (recons_loss + 0.01 * kl_loss).sum()
             assert loss.isnan().sum() == 0, "NaN found in loss!"
         if amp:
             scaler.scale(loss).backward()
@@ -537,7 +537,7 @@ def train_epoch_molvae(train_iter, epoch_length, train_loader, opt, model, epoch
             reconstruction, z_mu, z_sigma = model(images)
             recons_loss, avg_loss, model_means, log_scales = mol(reconstruction, images)
             kl_loss = kld(z_mu, 2*z_sigma.log())
-            loss = (recons_loss + kl_loss).sum()
+            loss = (recons_loss + 0.01 * kl_loss).sum()
             assert loss.isnan().sum() == 0, "NaN found in loss!"
         if amp:
             scaler.scale(loss).backward()
