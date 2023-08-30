@@ -134,7 +134,7 @@ def get_mix_data():
 
 
 class GMMSynthD:
-    def __init__(self, mu=255, std=16, gmm_fwhm=5):
+    def __init__(self, mu=255, std=16, gmm_fwhm=2):
         self.mu = mu
         self.std = std
         self.gmm_fwhm = gmm_fwhm
