@@ -19,7 +19,7 @@ def get_mri_data():
         mn.transforms.ToTensorD(keys=["image"], 
                                 dtype=float),
         mn.transforms.SpacingD(keys=["image"], pixdim=1, mode=["bilinear"]),
-        mn.transforms.ResizeD(keys=["image"], spatial_size=(192,192), mode=("bilinear")),
+        mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224), mode=("bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
         mn.transforms.RandFlipD(keys=["image"], spatial_axis=0, prob=0.5),
         mn.transforms.RandFlipD(keys=["image"], spatial_axis=1, prob=0.5),
@@ -33,7 +33,7 @@ def get_mri_data():
         mn.transforms.ToTensorD(keys=["image"], 
                                 dtype=float),
         mn.transforms.SpacingD(keys=["image"], pixdim=1, mode=["bilinear"]),
-        mn.transforms.ResizeD(keys=["image"], spatial_size=(192,192), mode=("bilinear")),
+        mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224), mode=("bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
     subj_train = [{"image":img} for img in img_list_train+preproc_list_train]
@@ -56,7 +56,7 @@ def get_synth_data():
             mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
         ]),
         GMMSynthD(mu=255, std=16),
-        mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear", "bilinear")),
+        mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(224,224), mode=("bilinear", "bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
         mn.transforms.RandFlipD(keys=["image", "label"], spatial_axis=0, prob=0.5),
         mn.transforms.RandFlipD(keys=["image", "label"], spatial_axis=1, prob=0.5),
@@ -75,7 +75,7 @@ def get_synth_data():
             mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
         ]),
         GMMSynthD(mu=255, std=16),
-        mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear", "bilinear")),
+        mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(224,224), mode=("bilinear", "bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
     subj_train = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_train]
@@ -101,7 +101,7 @@ def get_mix_data():
             mn.transforms.IdentityD(keys=["label"]),
             GMMSynthD(mu=255, std=16),
         ]),
-        mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear", "bilinear")),
+        mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(224,224), mode=("bilinear", "bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
         mn.transforms.RandFlipD(keys=["image", "label"], spatial_axis=0, prob=0.5),
         mn.transforms.RandFlipD(keys=["image", "label"], spatial_axis=1, prob=0.5),
@@ -123,7 +123,7 @@ def get_mix_data():
             mn.transforms.IdentityD(keys=["label"]),
             GMMSynthD(mu=255, std=16),
         ]),
-        mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear", "bilinear")),
+        mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(224,224), mode=("bilinear", "bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
     subj_train = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_train]\
