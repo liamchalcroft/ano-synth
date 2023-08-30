@@ -91,7 +91,7 @@ def get_mix_data():
         mn.transforms.LoadImageD(keys=["image", "label"]),
         mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
         mn.transforms.ToTensorD(keys=["image", "label"], 
-                                dtype=int),
+                                dtype=float),
         mn.transforms.SpacingD(keys=["image", "label"], pixdim=1, mode=["nearest"]),
         mn.transforms.OneOf(transforms=[
             mn.transforms.IdentityD(keys=["label"]),
@@ -113,7 +113,7 @@ def get_mix_data():
         mn.transforms.LoadImageD(keys=["image", "label"]),
         mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
         mn.transforms.ToTensorD(keys=["image", "label"], 
-                                dtype=int),
+                                dtype=float),
         mn.transforms.SpacingD(keys=["image", "label"], pixdim=1, mode=["bilinear", "bilinear"]),
         mn.transforms.OneOf(transforms=[
             mn.transforms.IdentityD(keys=["label"]),
