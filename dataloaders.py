@@ -36,8 +36,8 @@ def get_mri_data():
         mn.transforms.ResizeD(keys=["image"], spatial_size=(192,192), mode=("bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
-    subj_train = [{"image":img} for img in img_list_train+preproc_list_train]
-    subj_val = [{"image":img} for img in img_list_val+preproc_list_val]
+    subj_train = [{"image":img} for img in preproc_list_train]
+    subj_val = [{"image":img} for img in preproc_list_val]
     os.makedirs("tmp_data", exist_ok=True)
     data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
     data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
