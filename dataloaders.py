@@ -145,15 +145,10 @@ class GMMSynthD:
     def __call__(self, data):
         d = dict(data)
         label = d["label"]
-        print(label.shape)
-        for i in range(label.size(0)):
-            print(label[i].min(), label[i].mean(), label[i].max())
         labels = [
             mn.transforms.GaussianSmooth(np.random.uniform(0, self.gmm_fwhm))(torch.normal(np.random.uniform(0, self.mu), 
                                                                                            np.random.uniform(0, self.std), 
                                                                                            label[0:1].shape) * (label[i]))
                    for i in range(label.size(0))] # sample random intensities for each tissue and apply within-tissue blurring
-        for i in range(label.size(0)):
-            print(labels[i].min(), labels[i].mean(), labels[i].max())
         d["image"] = torch.stack(labels, 0).sum(0)
         return d
