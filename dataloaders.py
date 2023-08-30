@@ -3,8 +3,8 @@ import monai as mn
 import numpy as np
 import os, glob
 
-img_list = glob.glob("oasis_train/*/*_image.nii.gz")
-img_list_train, img_list_val = img_list[:int(0.9*len(img_list))], img_list[int(0.9*len(img_list)):]
+img_list_train = glob.glob("2D/train/*_image.nii.gz")
+img_list_val = glob.glob("2D/val/*_image.nii.gz")
 print("\nTrain Images: {}\nVal Images: {}".format(len(img_list_train), len(img_list_val)))
 preproc_list_train = [img.replace("image", "preproc") for img in img_list_train]
 preproc_list_val = [img.replace("image", "preproc") for img in img_list_val]
