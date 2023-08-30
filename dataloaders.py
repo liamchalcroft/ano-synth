@@ -145,6 +145,7 @@ class GMMSynthD:
     def __call__(self, data):
         d = dict(data)
         label = d["label"]
+        print(label.shape)
         for i in range(label.size(0)):
             print(label[i].min(), label[i].mean(), label[i].max())
         labels = [
