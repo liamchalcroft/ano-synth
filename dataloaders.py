@@ -2,9 +2,12 @@ import torch
 import monai as mn
 import numpy as np
 import os, glob
+from random import shuffle
 
 img_list_train = glob.glob("2D/train/*_image.nii.gz")
 img_list_val = glob.glob("2D/val/*_image.nii.gz")
+shuffle(img_list_train)
+shuffle(img_list_val)
 print("\nTrain Images: {}\nVal Images: {}".format(len(img_list_train), len(img_list_val)))
 preproc_list_train = [img.replace("image", "preproc") for img in img_list_train]
 preproc_list_val = [img.replace("image", "preproc") for img in img_list_val]
