@@ -75,8 +75,8 @@ def get_synth_data():
         mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear","nearest")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
-    subj_train = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(10)]} for img in preproc_list_train]
-    subj_val = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(10)]} for img in preproc_list_val]
+    subj_train = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_train]
+    subj_val = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_val]
     os.makedirs("tmp_data", exist_ok=True)
     data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
     data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
@@ -123,10 +123,10 @@ def get_mix_data():
         mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear","nearest")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
-    subj_train = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(10)]} for img in preproc_list_train]\
-        + [{"image":img, "label":[img.replace("image","l{}".format(i)) for i in range(10)]} for img in img_list_train]
-    subj_val = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(10)]} for img in preproc_list_val]\
-        + [{"image":img, "label":[img.replace("image","l{}".format(i)) for i in range(10)]} for img in img_list_val]
+    subj_train = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_train]\
+        + [{"image":img, "label":[img.replace("image","l{}".format(i)) for i in range(1,10)]} for img in img_list_train]
+    subj_val = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_val]\
+        + [{"image":img, "label":[img.replace("image","l{}".format(i)) for i in range(1,10)]} for img in img_list_val]
     os.makedirs("tmp_data", exist_ok=True)
     data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
     data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
