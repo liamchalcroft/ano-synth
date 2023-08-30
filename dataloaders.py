@@ -11,7 +11,7 @@ preproc_list_val = [img.replace("image", "preproc") for img in img_list_val]
 
 def get_mri_data():
     train_transforms = mn.transforms.Compose([
-        mn.transforms.LoadNiftiD(keys=["image"]),
+        mn.transforms.LoadImageD(keys=["image"]),
         mn.transforms.EnsureChannelFirstD(keys=["image"]),
         mn.transforms.ToTensorD(keys=["image"], 
                                 dtype=float),
@@ -25,7 +25,7 @@ def get_mri_data():
                                   padding_mode="reflection", mode=("bilinear","nearest")),
     ])
     val_transforms = mn.transforms.Compose([
-        mn.transforms.LoadNiftiD(keys=["image"]),
+        mn.transforms.LoadImageD(keys=["image"]),
         mn.transforms.EnsureChannelFirstD(keys=["image"]),
         mn.transforms.ToTensorD(keys=["image"], 
                                 dtype=float),
@@ -43,7 +43,7 @@ def get_mri_data():
 
 def get_synth_data():
     train_transforms = mn.transforms.Compose([
-        mn.transforms.LoadNiftiD(keys=["image", "label"]),
+        mn.transforms.LoadImageD(keys=["image", "label"]),
         mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
         mn.transforms.ToTensorD(keys=["image", "label"], 
                                 dtype=int),
@@ -62,7 +62,7 @@ def get_synth_data():
                                   padding_mode="reflection", mode=("bilinear","nearest")),
     ])
     val_transforms = mn.transforms.Compose([
-        mn.transforms.LoadNiftiD(keys=["image", "label"]),
+        mn.transforms.LoadImageD(keys=["image", "label"]),
         mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
         mn.transforms.ToTensorD(keys=["image", "label"], 
                                 dtype=int),
@@ -85,7 +85,7 @@ def get_synth_data():
 
 def get_mix_data():
     train_transforms = mn.transforms.Compose([
-        mn.transforms.LoadNiftiD(keys=["image", "label"]),
+        mn.transforms.LoadImageD(keys=["image", "label"]),
         mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
         mn.transforms.ToTensorD(keys=["image", "label"], 
                                 dtype=int),
@@ -107,7 +107,7 @@ def get_mix_data():
                                   padding_mode="reflection", mode=("bilinear","nearest")),
     ])
     val_transforms = mn.transforms.Compose([
-        mn.transforms.LoadNiftiD(keys=["image", "label"]),
+        mn.transforms.LoadImageD(keys=["image", "label"]),
         mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
         mn.transforms.ToTensorD(keys=["image", "label"], 
                                 dtype=int),
