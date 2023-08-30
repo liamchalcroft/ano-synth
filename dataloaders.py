@@ -45,12 +45,17 @@ def get_mri_data():
     data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
     return data_train, data_val
 
+def printinfo(x):
+    print(x.shape, x.min(), x.mean(), x.max())
+    return x
 
 def get_synth_data():
     train_transforms = mn.transforms.Compose([
         mn.transforms.LoadImageD(keys=["image"]+label_names),
         mn.transforms.EnsureChannelFirstD(keys=["image"]+label_names),
         mn.transforms.ConcatItemsD(keys=label_names, name="label"),
+        mn.transforms.LambdaD(keys=label_names, func=printinfo),
+        mn.transforms.LambdaD(keys="label", func=printinfo),
         mn.transforms.DeleteItemsD(keys=label_names),
         mn.transforms.ToTensorD(keys=["image", "label"], 
                                 dtype=int),
