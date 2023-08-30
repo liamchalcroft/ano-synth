@@ -145,7 +145,7 @@ class GMMSynthD:
         labels = [
             mn.transforms.GaussianSmooth(np.random.uniform(0, self.gmm_fwhm))(torch.normal(np.random.uniform(0, self.mu), 
                                                                                            np.random.uniform(0, self.std), 
-                                                                                           label.shape) * (label[i]))
+                                                                                           label[0:1].shape) * (label[i]))
                    for i in range(label.size(0))] # sample random intensities for each tissue and apply within-tissue blurring
         print(labels[0].shape)
         d["image"] = torch.stack(labels, 0).sum(0)
