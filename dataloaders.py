@@ -147,5 +147,6 @@ class GMMSynthD:
                                                                                            np.random.uniform(0, self.std), 
                                                                                            label.shape) * (label[i]))
                    for i in range(label.size(0))] # sample random intensities for each tissue and apply within-tissue blurring
+        print(labels[0].shape)
         d["image"] = torch.stack(labels, 0).sum(0)
         return d
