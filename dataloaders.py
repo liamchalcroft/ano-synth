@@ -12,8 +12,6 @@ print("\nTrain Images: {}\nVal Images: {}".format(len(img_list_train), len(img_l
 preproc_list_train = [img.replace("image", "preproc") for img in img_list_train]
 preproc_list_val = [img.replace("image", "preproc") for img in img_list_val]
 
-label_names = ["label{}".format(i) for i in range(1,10)]
-
 def get_mri_data():
     train_transforms = mn.transforms.Compose([
         mn.transforms.LoadImageD(keys=["image"]),
@@ -45,25 +43,18 @@ def get_mri_data():
     data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
     return data_train, data_val
 
-def printinfo(x):
-    print(x.shape, x.min(), x.mean(), x.max())
-    return x
 
 def get_synth_data():
     train_transforms = mn.transforms.Compose([
-        mn.transforms.LoadImageD(keys=["image"]+label_names),
-        mn.transforms.EnsureChannelFirstD(keys=["image"]+label_names),
-        mn.transforms.ConcatItemsD(keys=label_names, name="label"),
-        mn.transforms.LambdaD(keys=label_names, func=printinfo),
-        mn.transforms.LambdaD(keys="label", func=printinfo),
-        mn.transforms.DeleteItemsD(keys=label_names),
+        mn.transforms.LoadImageD(keys=["image", "label"]),
+        mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
         mn.transforms.ToTensorD(keys=["image", "label"], 
-                                dtype=int),
+                                dtype=float),
         mn.transforms.SpacingD(keys=["image", "label"], pixdim=1, mode=["bilinear", "bilinear"]),
-        # mn.transforms.OneOf(transforms=[
-        #     mn.transforms.IdentityD(keys=["label"]),
-        #     mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
-        # ]),
+        mn.transforms.OneOf(transforms=[
+            mn.transforms.IdentityD(keys=["label"]),
+            mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
+        ]),
         GMMSynthD(mu=255, std=16),
         mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear", "bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
@@ -74,32 +65,21 @@ def get_synth_data():
                                   padding_mode="reflection", mode=("bilinear", "bilinear")),
     ])
     val_transforms = mn.transforms.Compose([
-        mn.transforms.LoadImageD(keys=["image"]+label_names),
-        mn.transforms.EnsureChannelFirstD(keys=["image"]+label_names),
-        mn.transforms.ConcatItemsD(keys=label_names, name="label"),
-        mn.transforms.DeleteItemsD(keys=label_names),
+        mn.transforms.LoadImageD(keys=["image", "label"]),
+        mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
         mn.transforms.ToTensorD(keys=["image", "label"], 
-                                dtype=int),
+                                dtype=float),
         mn.transforms.SpacingD(keys=["image", "label"], pixdim=1, mode=["bilinear", "bilinear"]),
-        # mn.transforms.OneOf(transforms=[
-        #     mn.transforms.IdentityD(keys=["label"]),
-        #     mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
-        # ]),
+        mn.transforms.OneOf(transforms=[
+            mn.transforms.IdentityD(keys=["label"]),
+            mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
+        ]),
         GMMSynthD(mu=255, std=16),
         mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear", "bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
-    subj_train = [{"image":img, "label1":img.replace("preproc","l1"), "label2":img.replace("preproc","l2"),
-                   "label3":img.replace("preproc","l3"), "label4":img.replace("preproc","l4"),
-                   "label5":img.replace("preproc","l5"), "label6":img.replace("preproc","l6"),
-                   "label7":img.replace("preproc","l7"), "label8":img.replace("preproc","l8"),
-                   "label9":img.replace("preproc","l9")} for img in preproc_list_train]
-                   
-    subj_val = [{"image":img, "label1":img.replace("preproc","l1"), "label2":img.replace("preproc","l2"),
-                   "label3":img.replace("preproc","l3"), "label4":img.replace("preproc","l4"),
-                   "label5":img.replace("preproc","l5"), "label6":img.replace("preproc","l6"),
-                   "label7":img.replace("preproc","l7"), "label8":img.replace("preproc","l8"),
-                   "label9":img.replace("preproc","l9")} for img in preproc_list_val]
+    subj_train = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_train]
+    subj_val = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_val]
     os.makedirs("tmp_data", exist_ok=True)
     data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
     data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
@@ -108,10 +88,8 @@ def get_synth_data():
 
 def get_mix_data():
     train_transforms = mn.transforms.Compose([
-        mn.transforms.LoadImageD(keys=["image"]+label_names),
-        mn.transforms.EnsureChannelFirstD(keys=["image"]+label_names),
-        mn.transforms.ConcatItemsD(keys=label_names, name="label"),
-        mn.transforms.DeleteItemsD(keys=label_names),
+        mn.transforms.LoadImageD(keys=["image", "label"]),
+        mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
         mn.transforms.ToTensorD(keys=["image", "label"], 
                                 dtype=int),
         mn.transforms.SpacingD(keys=["image", "label"], pixdim=1, mode=["nearest"]),
@@ -132,10 +110,8 @@ def get_mix_data():
                                   padding_mode="reflection", mode=("bilinear", "bilinear")),
     ])
     val_transforms = mn.transforms.Compose([
-        mn.transforms.LoadImageD(keys=["image"]+label_names),
-        mn.transforms.EnsureChannelFirstD(keys=["image"]+label_names),
-        mn.transforms.ConcatItemsD(keys=label_names, name="label"),
-        mn.transforms.DeleteItemsD(keys=label_names),
+        mn.transforms.LoadImageD(keys=["image", "label"]),
+        mn.transforms.EnsureChannelFirstD(keys=["image", "label"]),
         mn.transforms.ToTensorD(keys=["image", "label"], 
                                 dtype=int),
         mn.transforms.SpacingD(keys=["image", "label"], pixdim=1, mode=["bilinear", "bilinear"]),
@@ -150,27 +126,10 @@ def get_mix_data():
         mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear", "bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
-    subj_train = [{"image":img, "label1":img.replace("preproc","l1"), "label2":img.replace("preproc","l2"),
-                   "label3":img.replace("preproc","l3"), "label4":img.replace("preproc","l4"),
-                   "label5":img.replace("preproc","l5"), "label6":img.replace("preproc","l6"),
-                   "label7":img.replace("preproc","l7"), "label8":img.replace("preproc","l8"),
-                   "label9":img.replace("preproc","l9")} for img in preproc_list_train]\
-        + [{"image":img, "label1":img.replace("image","l1"), "label2":img.replace("image","l2"),
-                   "label3":img.replace("image","l3"), "label4":img.replace("image","l4"),
-                   "label5":img.replace("image","l5"), "label6":img.replace("image","l6"),
-                   "label7":img.replace("image","l7"), "label8":img.replace("image","l8"),
-                   "label9":img.replace("image","l9")} for img in img_list_train]
-                   
-    subj_val = [{"image":img, "label1":img.replace("preproc","l1"), "label2":img.replace("preproc","l2"),
-                   "label3":img.replace("preproc","l3"), "label4":img.replace("preproc","l4"),
-                   "label5":img.replace("preproc","l5"), "label6":img.replace("preproc","l6"),
-                   "label7":img.replace("preproc","l7"), "label8":img.replace("preproc","l8"),
-                   "label9":img.replace("preproc","l9")} for img in preproc_list_val]\
-        + [{"image":img, "label1":img.replace("image","l1"), "label2":img.replace("image","l2"),
-                   "label3":img.replace("image","l3"), "label4":img.replace("image","l4"),
-                   "label5":img.replace("image","l5"), "label6":img.replace("image","l6"),
-                   "label7":img.replace("image","l7"), "label8":img.replace("image","l8"),
-                   "label9":img.replace("image","l9")} for img in img_list_val]
+    subj_train = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_train]\
+        + [{"image":img, "label":[img.replace("image","l{}".format(i)) for i in range(1,10)]} for img in img_list_train]
+    subj_val = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_val]\
+        + [{"image":img, "label":[img.replace("image","l{}".format(i)) for i in range(1,10)]} for img in img_list_val]
     os.makedirs("tmp_data", exist_ok=True)
     data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
     data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
