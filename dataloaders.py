@@ -51,11 +51,11 @@ def get_synth_data():
         mn.transforms.ToTensorD(keys=["image", "label"], 
                                 dtype=int),
         mn.transforms.SpacingD(keys=["image", "label"], pixdim=1, mode=["bilinear", "bilinear"]),
-        mn.transforms.OneOf(transforms=[
-            mn.transforms.IdentityD(keys=["label"]),
-            mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
-        ]),
-        GMMSynthD(mu=255, std=16, gmm_fwhm=5),
+        # mn.transforms.OneOf(transforms=[
+        #     mn.transforms.IdentityD(keys=["label"]),
+        #     mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
+        # ]),
+        GMMSynthD(mu=255, std=16),
         mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear", "bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
         mn.transforms.RandFlipD(keys=["image", "label"], spatial_axis=0, prob=0.5),
@@ -70,11 +70,11 @@ def get_synth_data():
         mn.transforms.ToTensorD(keys=["image", "label"], 
                                 dtype=int),
         mn.transforms.SpacingD(keys=["image", "label"], pixdim=1, mode=["bilinear", "bilinear"]),
-        mn.transforms.OneOf(transforms=[
-            mn.transforms.IdentityD(keys=["label"]),
-            mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
-        ]),
-        GMMSynthD(mu=255, std=16, gmm_fwhm=5),
+        # mn.transforms.OneOf(transforms=[
+        #     mn.transforms.IdentityD(keys=["label"]),
+        #     mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
+        # ]),
+        GMMSynthD(mu=255, std=16),
         mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear", "bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
@@ -99,7 +99,7 @@ def get_mix_data():
         ]),
         mn.transforms.OneOf(transforms=[
             mn.transforms.IdentityD(keys=["label"]),
-            GMMSynthD(mu=255, std=16, gmm_fwhm=5),
+            GMMSynthD(mu=255, std=16),
         ]),
         mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear", "bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
@@ -121,7 +121,7 @@ def get_mix_data():
         ]),
         mn.transforms.OneOf(transforms=[
             mn.transforms.IdentityD(keys=["label"]),
-            GMMSynthD(mu=255, std=16, gmm_fwhm=5),
+            GMMSynthD(mu=255, std=16),
         ]),
         mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(192,192), mode=("bilinear", "bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
