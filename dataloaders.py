@@ -15,22 +15,22 @@ def get_mri_data():
         mn.transforms.EnsureChannelFirstD(keys=["image"]),
         mn.transforms.ToTensorD(keys=["image"], 
                                 dtype=float),
-        mn.transforms.SpacingD(keys=["image"], pixdim=1, mode=["bilinear", "bilinear"]),
-        mn.transforms.ResizeD(keys=["image"], spatial_size=(192,192), mode=("bilinear","nearest")),
+        mn.transforms.SpacingD(keys=["image"], pixdim=1, mode=["bilinear"]),
+        mn.transforms.ResizeD(keys=["image"], spatial_size=(192,192), mode=("bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
         mn.transforms.RandFlipD(keys=["image"], spatial_axis=0, prob=0.5),
         mn.transforms.RandFlipD(keys=["image"], spatial_axis=1, prob=0.5),
         mn.transforms.Rand2DElasticD(keys=["image"], spacing=(10,10), magnitude_range=(50,150),
                                   rotate_range=30, shear_range=0.15, translate_range=0.5, scale_range=0.2,
-                                  padding_mode="reflection", mode=("bilinear","nearest")),
+                                  padding_mode="reflection", mode=("bilinear")),
     ])
     val_transforms = mn.transforms.Compose([
         mn.transforms.LoadImageD(keys=["image"]),
         mn.transforms.EnsureChannelFirstD(keys=["image"]),
         mn.transforms.ToTensorD(keys=["image"], 
                                 dtype=float),
-        mn.transforms.SpacingD(keys=["image"], pixdim=1, mode=["bilinear", "bilinear"]),
-        mn.transforms.ResizeD(keys=["image"], spatial_size=(192,192), mode=("bilinear","nearest")),
+        mn.transforms.SpacingD(keys=["image"], pixdim=1, mode=["bilinear"]),
+        mn.transforms.ResizeD(keys=["image"], spatial_size=(192,192), mode=("bilinear")),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
     subj_train = [{"image":img} for img in img_list_train+preproc_list_train]
