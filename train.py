@@ -36,6 +36,8 @@ if __name__ =='__main__':
     
     if args.synth:
         args.name = 'synth-' + args.name
+    elif args.mix:
+        args.name = 'mix-' + args.name
     
     os.makedirs(os.path.join(args.root, args.name), exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
