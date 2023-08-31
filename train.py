@@ -18,6 +18,7 @@ if __name__ =='__main__':
     parser.add_argument("--epochs", type=int, default=200, help="Number of epochs for training.")
     parser.add_argument("--epoch_length", type=int, default=100, help="Number of iterations per epoch.")
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
+    parser.add_argument("--recon_weight", type=float, default=100, help="Weighting for recon term in loss function.")
     parser.add_argument("--val_interval", type=int, default=2, help="Validation interval.")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
     parser.add_argument("--beta_init", type=int, default=0, help="Initial beta (for BetaVAE only).")
@@ -229,19 +230,19 @@ if __name__ =='__main__':
             if args.model == 'AE':
                 metric = train_utils.val_epoch_ae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'RAE':
-                metric = train_utils.val_epoch_rae(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_rae(val_loader, model, device, args.amp, epoch, args.recon_weight)
             elif args.model == 'SAMBA':
-                metric = train_utils.val_epoch_samba(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_samba(val_loader, model, device, args.amp, epoch, args.recon_weight)
             elif args.model == 'VAE':
-                metric = train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch, args.recon_weight)
             elif args.model == 'BetaVAE':
-                metric = train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch, args.recon_weight)
             elif args.model == 'GaussVAE':
-                metric = train_utils.val_epoch_gaussvae(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_gaussvae(val_loader, model, device, args.amp, epoch, args.recon_weight)
             elif args.model == 'MOLVAE':
-                metric = train_utils.val_epoch_molvae(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_molvae(val_loader, model, device, args.amp, epoch, args.recon_weight)
             elif args.model == 'VQVAE':
-                metric = train_utils.val_epoch_vqvae(val_loader, model, device, args.amp, epoch)
+                metric = train_utils.val_epoch_vqvae(val_loader, model, device, args.amp, epoch, args.recon_weight)
             if metric > metric_best:
                 metric_best = metric
                 torch.save(
