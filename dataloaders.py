@@ -140,10 +140,11 @@ def get_mix_data():
 
 
 class GMMSynthD:
-    def __init__(self, mu=255, std=16, gmm_fwhm=2):
+    def __init__(self, mu=255, std=16, gmm_fwhm=2, fwhm=2):
         self.mu = mu
         self.std = std
         self.gmm_fwhm = gmm_fwhm
+        self.fwhm = fwhm
 
     def __call__(self, data):
         d = dict(data)
@@ -153,5 +154,5 @@ class GMMSynthD:
                                                                                            np.random.uniform(0, self.std), 
                                                                                            label[0:1].shape) * (label[i]))
                    for i in range(label.size(0))] # sample random intensities for each tissue and apply within-tissue blurring
-        d["image"] = torch.stack(labels, 0).sum(0)
+        d["image"] = mn.transforms.GaussianSmooth(np.random.uniform(0, self.fwhm))(torch.stack(labels, 0).sum(0))
         return d
