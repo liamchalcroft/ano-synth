@@ -130,9 +130,11 @@ def get_mix_data():
         + [{"image":img, "label":[img.replace("image","l{}".format(i)) for i in range(1,10)]} for img in img_list_train]
     subj_val = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_val]\
         + [{"image":img, "label":[img.replace("image","l{}".format(i)) for i in range(1,10)]} for img in img_list_val]
-    os.makedirs("tmp_data", exist_ok=True)
-    data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
-    data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
+    # os.makedirs("tmp_data", exist_ok=True)
+    # data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
+    # data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
+    data_train = mn.data.Dataset(subj_train, transform=train_transforms)
+    data_val = mn.data.Dataset(subj_val, transform=val_transforms)
     return data_train, data_val
 
 
