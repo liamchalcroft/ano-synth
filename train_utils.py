@@ -685,6 +685,7 @@ def val_epoch_samba(val_loader, model, device, amp, epoch):
     ssim_loss = 0
     inputs = []
     recons = []
+    samples = []
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
     progress_bar = tqdm(enumerate(val_loader), total=len(val_loader), ncols=110)
     progress_bar.set_description(f"[Validation] Epoch {epoch}")
@@ -701,11 +702,15 @@ def val_epoch_samba(val_loader, model, device, amp, epoch):
             if val_step < 16:
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
+                with ctx:
+                    samples.append(model.decode(torch.randn_like(z))[0].cpu().float())
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
+                grid_samples = make_grid(samples, nrow=4, padding=5, normalize=True, scale_each=True)
                 wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
-                                            wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
+                                            wandb.Image(grid_recons[0].numpy(), caption="Reconstructions"),
+                                            wandb.Image(grid_samples[0].numpy(), caption="Random samples")]})
             val_loss += recons_loss.sum().item()
             kld_loss += kl_loss.sum().item()
             ssim_loss += _ssim.item()
@@ -723,6 +728,7 @@ def val_epoch_vae(val_loader, model, device, amp, epoch):
     ssim_loss = 0
     inputs = []
     recons = []
+    samples = []
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
     progress_bar = tqdm(enumerate(val_loader), total=len(val_loader), ncols=110)
     progress_bar.set_description(f"[Validation] Epoch {epoch}")
@@ -738,11 +744,15 @@ def val_epoch_vae(val_loader, model, device, amp, epoch):
             if val_step < 16:
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
+                with ctx:
+                    samples.append(model.decode(torch.randn_like(z_mu))[0].cpu().float())
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
+                grid_samples = make_grid(samples, nrow=4, padding=5, normalize=True, scale_each=True)
                 wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
-                                            wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
+                                            wandb.Image(grid_recons[0].numpy(), caption="Reconstructions"),
+                                            wandb.Image(grid_samples[0].numpy(), caption="Random samples")]})
             val_loss += recons_loss.sum().item()
             kld_loss += kl_loss.sum().item()
             ssim_loss += _ssim.item()
@@ -761,6 +771,7 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
     inputs = []
     recons = []
     sigmas = []
+    samples = []
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
     progress_bar = tqdm(enumerate(val_loader), total=len(val_loader), ncols=110)
     progress_bar.set_description(f"[Validation] Epoch {epoch}")
@@ -777,13 +788,17 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
                 sigmas.append(recon_sigma[0].cpu().float())
+                with ctx:
+                    samples.append(model.decode(torch.randn_like(z_mu))[0][0].cpu().float())
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_sigmas = make_grid(sigmas, nrow=4, padding=5, normalize=True, scale_each=False)
+                grid_samples = make_grid(samples, nrow=4, padding=5, normalize=True, scale_each=True)
                 wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
                                             wandb.Image(grid_recons[0].numpy(), caption="Reconstructions"),
-                                            wandb.Image(grid_sigmas[0].numpy(), caption="Uncertanties")]})
+                                            wandb.Image(grid_sigmas[0].numpy(), caption="Uncertanties"),
+                                            wandb.Image(grid_samples[0].numpy(), caption="Random samples")]})
             val_loss += recons_loss.sum().item()
             kld_loss += kl_loss.sum().item()
             ssim_loss += _ssim.item()
@@ -801,6 +816,7 @@ def val_epoch_molvae(val_loader, model, device, amp, epoch):
     ssim_loss = 0
     inputs = []
     recons = []
+    samples = []
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if amp else nullcontext()
     progress_bar = tqdm(enumerate(val_loader), total=len(val_loader), ncols=110)
     progress_bar.set_description(f"[Validation] Epoch {epoch}")
@@ -816,11 +832,15 @@ def val_epoch_molvae(val_loader, model, device, amp, epoch):
             if val_step < 16:
                 inputs.append(images[0].cpu().float().mean(0, keepdim=True))
                 recons.append(reconstruction[0].cpu().float().mean(0, keepdim=True))
+                with ctx:
+                    samples.append(sample_from_mol(model.decode(torch.randn_like(z_mu)), images)[0].cpu().float())
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
+                grid_samples = make_grid(samples, nrow=4, padding=5, normalize=True, scale_each=True)
                 wandb.log({"val/examples": [wandb.Image(grid_inputs[0].numpy(), caption="Real images"),
-                                            wandb.Image(grid_recons[0].numpy(), caption="Reconstructions")]})
+                                            wandb.Image(grid_recons[0].numpy(), caption="Reconstructions"),
+                                            wandb.Image(grid_samples[0].numpy(), caption="Random samples")]})
             val_loss += recons_loss.sum().item()
             kld_loss += kl_loss.sum().item()
             ssim_loss += _ssim.item()
