@@ -20,6 +20,7 @@ def get_mri_data():
                                 dtype=float),
         mn.transforms.SpacingD(keys=["image"], pixdim=1, mode=["bilinear"]),
         mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224), mode=("bilinear")),
+        mn.transforms.RandAdjustContrastD(keys=["image"], prob=0.5),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
         mn.transforms.RandFlipD(keys=["image"], spatial_axis=0, prob=0.5),
         mn.transforms.RandFlipD(keys=["image"], spatial_axis=1, prob=0.5),
@@ -98,7 +99,7 @@ def get_mix_data():
             mn.transforms.MaskIntensityD(keys=["label"], mask_key="image"),
         ]),
         mn.transforms.OneOf(transforms=[
-            mn.transforms.IdentityD(keys=["label"]),
+            mn.transforms.RandAdjustContrastD(keys=["image"], prob=0.5),
             GMMSynthD(mu=255, std=16),
         ]),
         mn.transforms.ResizeD(keys=["image", "label"], spatial_size=(224,224), mode=("bilinear", "bilinear")),
