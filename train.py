@@ -176,7 +176,10 @@ if __name__ =='__main__':
         def state_dict(self):
             return self.metric
         
-    opt = torch.optim.AdamW(model.parameters(), args.lr, fused=torch.cuda.is_available())
+    try:
+        opt = torch.optim.AdamW(model.parameters(), args.lr, fused=torch.cuda.is_available())
+    except:
+        opt = torch.optim.AdamW(model.parameters(), args.lr)
     # Try to load most recent weight
     if args.resume or args.resume_best:
         model.load_state_dict(checkpoint["net"])
