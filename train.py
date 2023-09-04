@@ -200,6 +200,9 @@ if __name__ =='__main__':
     else:
         start_epoch = 0
         metric_best = 0
+        def lambda1(epoch):
+            return (1 - (epoch) / args.epochs) ** 0.9
+        lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
         
     if args.synth:
         your_train_data, your_eval_data = dataloaders.get_synth_data()
