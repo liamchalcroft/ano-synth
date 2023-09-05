@@ -155,11 +155,6 @@ if __name__ =='__main__':
         wandb.config.update(args)
     wandb.watch(model)
 
-    opt = torch.optim.AdamW(model.parameters(), args.lr, fused=torch.cuda.is_available())
-    def lambda1(epoch):
-        return (1 - epoch / args.epochs) ** 0.9
-    lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
-
     class WandBID:
         def __init__(self, wandb_id):
             self.wandb_id = wandb_id
@@ -181,16 +176,33 @@ if __name__ =='__main__':
         def state_dict(self):
             return self.metric
         
+    try:
+        opt = torch.optim.AdamW(model.parameters(), args.lr, fused=torch.cuda.is_available())
+    except:
+        opt = torch.optim.AdamW(model.parameters(), args.lr)
     # Try to load most recent weight
     if args.resume or args.resume_best:
         model.load_state_dict(checkpoint["net"])
         opt.load_state_dict(checkpoint["opt"])
-        lr_scheduler.load_state_dict(checkpoint["lr"])
         start_epoch = checkpoint["epoch"]
         metric_best = checkpoint["metric"]
+        if wandb.config["epochs"] == args.epochs:
+            # correct scheduler in cases where max epochs has changed
+            def lambda1(epoch):
+                return (1 - (epoch) / args.epochs) ** 0.9
+            lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
+            lr_scheduler.load_state_dict(checkpoint["lr"])
+        else:
+            # correct scheduler in cases where max epochs has changed
+            def lambda1(epoch):
+                return (1 - (epoch+start_epoch) / args.epochs) ** 0.9
+            lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
     else:
         start_epoch = 0
         metric_best = 0
+        def lambda1(epoch):
+            return (1 - (epoch) / args.epochs) ** 0.9
+        lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
         
     if args.synth:
         your_train_data, your_eval_data = dataloaders.get_synth_data()

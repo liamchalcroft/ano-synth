@@ -39,9 +39,11 @@ def get_mri_data():
     ])
     subj_train = [{"image":img} for img in img_list_train+preproc_list_train]
     subj_val = [{"image":img} for img in img_list_val+preproc_list_val]
-    os.makedirs("tmp_data", exist_ok=True)
-    data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
-    data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
+    # os.makedirs("tmp_data", exist_ok=True)
+    # data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
+    # data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
+    data_train = mn.data.Dataset(subj_train, transform=train_transforms)
+    data_val = mn.data.Dataset(subj_val, transform=val_transforms)
     return data_train, data_val
 
 
@@ -81,9 +83,11 @@ def get_synth_data():
     ])
     subj_train = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_train]
     subj_val = [{"image":img, "label":[img.replace("preproc","l{}".format(i)) for i in range(1,10)]} for img in preproc_list_val]
-    os.makedirs("tmp_data", exist_ok=True)
-    data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
-    data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
+    # os.makedirs("tmp_data", exist_ok=True)
+    # data_train = mn.data.PersistentDataset(subj_train, transform=train_transforms, cache_dir="tmp_data")
+    # data_val = mn.data.PersistentDataset(subj_val, transform=val_transforms, cache_dir="tmp_data")
+    data_train = mn.data.Dataset(subj_train, transform=train_transforms)
+    data_val = mn.data.Dataset(subj_val, transform=val_transforms)
     return data_train, data_val
 
 
@@ -140,10 +144,11 @@ def get_mix_data():
 
 
 class GMMSynthD:
-    def __init__(self, mu=255, std=16, gmm_fwhm=2):
+    def __init__(self, mu=255, std=16, gmm_fwhm=2, fwhm=2):
         self.mu = mu
         self.std = std
         self.gmm_fwhm = gmm_fwhm
+        self.fwhm = fwhm
 
     def __call__(self, data):
         d = dict(data)
@@ -153,5 +158,5 @@ class GMMSynthD:
                                                                                            np.random.uniform(0, self.std), 
                                                                                            label[0:1].shape) * (label[i]))
                    for i in range(label.size(0))] # sample random intensities for each tissue and apply within-tissue blurring
-        d["image"] = torch.stack(labels, 0).sum(0)
+        d["image"] = mn.transforms.GaussianSmooth(np.random.uniform(0, self.fwhm))(torch.stack(labels, 0).sum(0))
         return d
