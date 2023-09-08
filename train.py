@@ -28,15 +28,14 @@ if __name__ =='__main__':
     parser = argparse.ArgumentParser(argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--name", type=str, help="Name of WandB run.")
     parser.add_argument("--model", type=str, help="Model to use.",
-                        choices=["AE", "RAE", "SAMBA", "VAE", "BetaVAE", "GaussVAE", "VQVAE"])
+                        choices=["AE", "RAE", "SAMBA", "VAE", "GaussVAE", "MOLVAE", "VQVAE"])
     parser.add_argument("--epochs", type=int, default=200, help="Number of epochs for training.")
     parser.add_argument("--epoch_length", type=int, default=100, help="Number of iterations per epoch.")
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
-    parser.add_argument("--recon_weight", type=float, default=100, help="Weighting for recon term in loss function.")
     parser.add_argument("--val_interval", type=int, default=2, help="Validation interval.")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
     parser.add_argument("--beta_init", type=int, default=0, help="Initial beta (for BetaVAE only).")
-    parser.add_argument("--beta_final", type=int, default=20, help="Final beta (for BetaVAE only).")
+    parser.add_argument("--beta_final", type=int, default=1, help="Final beta (for BetaVAE only).")
     parser.add_argument("--beta_cycles", type=int, default=1, help="Number of beta cycles (for BetaVAE only).")
     parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
     parser.add_argument("--mixtures", type=int, default=10, help="Number of mixtures for MOLVAE.")
@@ -64,6 +63,7 @@ if __name__ =='__main__':
         print('Allocated:', round(torch.cuda.memory_allocated(0)/1024**3,1), 'GB')
         print('Cached:   ', round(torch.cuda.memory_reserved(0)/1024**3,1), 'GB')
     
+    betas = list(range(args.beta_init, args.beta_final, args.epochs//args.beta_cycles)) * args.beta_cycles
     if args.model in ['AE', 'RAE']:
         model = Autoencoder(
             spatial_dims=2,
@@ -92,21 +92,6 @@ if __name__ =='__main__':
             use_convtranspose=False,
             latent_channels=128,
         ).to(device)
-    elif args.model == 'BetaVAE':
-        model = AutoencoderKL(
-            spatial_dims=2,
-            in_channels=1,
-            out_channels=1,
-            num_channels=(16,16,32,64,128,128),
-            num_res_blocks=2,
-            norm_num_groups=16,
-            with_encoder_nonlocal_attn=False,
-            with_decoder_nonlocal_attn=False,
-            attention_levels=(False,False,False,False,False,False),
-            use_convtranspose=False,
-            latent_channels=128,
-        ).to(device)
-        betas = list(range(args.beta_init, args.beta_final, args.epochs//args.beta_cycles)) * args.beta_cycles
     elif args.model == 'GaussVAE':
         model = GaussAutoencoderKL(
             spatial_dims=2,
@@ -239,19 +224,17 @@ if __name__ =='__main__':
         if args.model == 'AE':
             train_iter = train_utils.train_epoch_ae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         elif args.model == 'RAE':
-            train_iter = train_utils.train_epoch_rae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, args.recon_weight)
+            train_iter = train_utils.train_epoch_rae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
         elif args.model == 'SAMBA':
-            train_iter = train_utils.train_epoch_samba(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, args.recon_weight)
+            train_iter = train_utils.train_epoch_samba(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
         elif args.model == 'VAE':
-            train_iter = train_utils.train_epoch_vae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, args.recon_weight)
-        elif args.model == 'BetaVAE':
-            train_iter = train_utils.train_epoch_betavae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, betas[epoch], args.amp, args.recon_weight)
+            train_iter = train_utils.train_epoch_vae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
         elif args.model == 'GaussVAE':
-            train_iter = train_utils.train_epoch_gaussvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, args.recon_weight)
+            train_iter = train_utils.train_epoch_gaussvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
         elif args.model == 'MOLVAE':
-            train_iter = train_utils.train_epoch_molvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, args.recon_weight)
+            train_iter = train_utils.train_epoch_molvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
         elif args.model == 'VQVAE':
-            train_iter = train_utils.train_epoch_vqvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, args.recon_weight)
+            train_iter = train_utils.train_epoch_vqvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         lr_scheduler.step()
 
         if (epoch + 1) % args.val_interval == 0:
@@ -263,8 +246,6 @@ if __name__ =='__main__':
             elif args.model == 'SAMBA':
                 metric = train_utils.val_epoch_samba(val_loader, model, device, args.amp, epoch)
             elif args.model == 'VAE':
-                metric = train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch)
-            elif args.model == 'BetaVAE':
                 metric = train_utils.val_epoch_vae(val_loader, model, device, args.amp, epoch)
             elif args.model == 'GaussVAE':
                 metric = train_utils.val_epoch_gaussvae(val_loader, model, device, args.amp, epoch)
