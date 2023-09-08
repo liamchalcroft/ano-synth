@@ -147,11 +147,9 @@ if __name__ =='__main__':
         ).to(device)
 
     if args.resume or args.resume_best:
-        print("Resume 2")
         ckpts = glob.glob(os.path.join(args.root, args.name, 'checkpoint.pt' if args.resume else 'checkpoint_best.pt'))
         if len(ckpts) == 0:
             args.resume = False
-            print("Resume 2 to false")
             print('\nNo checkpoints found. Beginning from epoch #0')
         else:
             checkpoint = torch.load(ckpts[0], map_location=device)
@@ -198,7 +196,6 @@ if __name__ =='__main__':
         opt = torch.optim.AdamW(model.parameters(), args.lr)
     # Try to load most recent weight
     if args.resume or args.resume_best:
-        print("Resume 3")
         model.load_state_dict(checkpoint["net"])
         opt.load_state_dict(checkpoint["opt"])
         start_epoch = checkpoint["epoch"]
