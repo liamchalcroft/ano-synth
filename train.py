@@ -225,14 +225,19 @@ if __name__ =='__main__':
             train_iter = train_utils.train_epoch_ae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         elif args.model == 'RAE':
             train_iter = train_utils.train_epoch_rae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
+            wandb.log({"train/beta": betas[epoch]})
         elif args.model == 'SAMBA':
             train_iter = train_utils.train_epoch_samba(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
+            wandb.log({"train/beta": betas[epoch]})
         elif args.model == 'VAE':
             train_iter = train_utils.train_epoch_vae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
+            wandb.log({"train/beta": betas[epoch]})
         elif args.model == 'GaussVAE':
             train_iter = train_utils.train_epoch_gaussvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
+            wandb.log({"train/beta": betas[epoch]})
         elif args.model == 'MOLVAE':
             train_iter = train_utils.train_epoch_molvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
+            wandb.log({"train/beta": betas[epoch]})
         elif args.model == 'VQVAE':
             train_iter = train_utils.train_epoch_vqvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         lr_scheduler.step()
