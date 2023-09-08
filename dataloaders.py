@@ -6,8 +6,17 @@ from random import shuffle
 
 img_list_train = glob.glob("2D/train/*_image.nii.gz")
 img_list_val = glob.glob("2D/val/*_image.nii.gz")
+
+img_list_train = sorted(img_list_train)
+img_list_val   = sorted(img_list_val)
+
+
+#img_list_train = img_list_train[:9000]
+#img_list_val   = img_list_train[:1000]
+
 shuffle(img_list_train)
 shuffle(img_list_val)
+
 print("\nTrain Images: {}\nVal Images: {}".format(len(img_list_train), len(img_list_val)))
 preproc_list_train = [img.replace("image", "preproc") for img in img_list_train]
 preproc_list_val = [img.replace("image", "preproc") for img in img_list_val]

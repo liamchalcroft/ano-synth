@@ -6,15 +6,33 @@ import numpy as np
 from contextlib import nullcontext
 from torchvision.utils import make_grid
 from torch.cuda.amp import GradScaler
+import random
+from monai.utils import set_determinism
+import os
+
+
+### Reproducibility ### 
+def set_global_seed(seed = 42):
+
+    set_determinism(seed=seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
 
 ### loss functions ###
-
-
 def kld(mu, log_var):
     mu = mu.reshape(mu.shape[0], mu.shape[1], -1)
     log_var = log_var.reshape(log_var.shape[0], log_var.shape[1], -1)
-    return -0.5 * (1 + log_var - mu.pow(2) - log_var.exp()).sum(1).mean(-1)
+    #return -0.5 * (1 + log_var - mu.pow(2) - log_var.exp()).sum(1).mean(-1)
+    return torch.mean((-0.5 * (1 + log_var - mu.pow(2) - log_var.exp())),  dim=(1, 2)) # new kld_batch_mean
 
 def l2(recon_x, x):
     x = x.reshape(x.shape[0], -1)
@@ -388,6 +406,7 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
         ctx = nullcontext()
     progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
     progress_bar.set_description(f"[Training] Epoch {epoch}")
+    DEBUG = False
     if train_iter is None:
         train_iter = iter(train_loader)
     for step in progress_bar:
@@ -400,10 +419,32 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
         opt.zero_grad(set_to_none=True)
         with ctx:
             reconstruction, z_mu, z_sigma = model(images)
+            if DEBUG:
+              print("reconstruction:",reconstruction.size())
+              print("reconstruction max:",torch.max(reconstruction).item())
+              print("reconstruction min:",torch.min(reconstruction).item())
+              print("reconstruction std:",torch.std(reconstruction).item())
             reconstruction = torch.sigmoid(reconstruction)
             recons_loss = l2(reconstruction, images)
-            kl_loss = kld(z_mu, 2*(z_sigma).log())
-            loss = (recon_weight * recons_loss + kl_loss).sum()
+            if DEBUG:
+              print("")
+              print("images:",images.size())
+              print("images max:",torch.max(images).item())
+              print("images min:",torch.min(images).item())
+              print("images std:",torch.std(images).item())
+              print("reconstruction:",reconstruction.size())
+              print("reconstruction max:",torch.max(reconstruction).item())
+              print("reconstruction min:",torch.min(reconstruction).item())
+              print("reconstruction std:",torch.std(reconstruction).item())
+              print("loss")
+              print("z_mu:",z_mu.size())
+              print("2*((z_sigma).log()):",(2*((z_sigma).log())).size())
+            #kl_loss = kld(z_mu, 2*(z_sigma).log())
+            kl_loss = kld(z_mu, 2*((z_sigma).log())) # new log var
+            if DEBUG:
+              print("recons_loss:",recons_loss.size())
+              print("kl_loss:",kl_loss.size())
+            loss = (recon_weight * recons_loss + kl_loss).sum() #sum() #mean
             assert loss.isnan().sum() == 0, "NaN found in loss!"
         if amp:
             scaler.scale(loss).backward()
@@ -415,10 +456,11 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
             opt.step()
-        epoch_loss += recons_loss.sum().item()
-        kld_loss += kl_loss.sum().item()
-        wandb.log({"train/recon_loss": recons_loss.sum().item()})
-        wandb.log({"train/kld_loss": kl_loss.sum().item()})
+        epoch_loss += recons_loss.sum().item() #sum() #mean
+        kld_loss += kl_loss.sum().item() #sum() #mean
+        wandb.log({"train/recon_loss": recons_loss.sum().item()}) #sum() #mean
+        wandb.log({"train/kld_loss": kl_loss.sum().item()}) #sum() #mean
+        wandb.log({"train/total_loss": loss.sum().item()}) #sum() #mean
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
     return train_iter
 

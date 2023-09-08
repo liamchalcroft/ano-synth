@@ -4,13 +4,27 @@ from models import Autoencoder, AutoencoderKL, GaussAutoencoderKL, VQVAE
 import torch
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
-import dataloaders
 import train_utils
-import wandb
+train_utils.set_global_seed(seed= 42)
 
+import dataloaders
+import wandb
+import atexit
+
+def finish_wandb():
+  """
+  function to finish wandb if there is an error in the code or force stop
+  """
+  print("Closing wandb.. ")
+  wandb.finish()
+  print("Wandb closed")
 
 if __name__ =='__main__':
     
+    # if there is an error execute this function
+    atexit.register(finish_wandb)
+
+
     parser = argparse.ArgumentParser(argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--name", type=str, help="Name of WandB run.")
     parser.add_argument("--model", type=str, help="Model to use.",
@@ -133,9 +147,11 @@ if __name__ =='__main__':
         ).to(device)
 
     if args.resume or args.resume_best:
+        print("Resume 2")
         ckpts = glob.glob(os.path.join(args.root, args.name, 'checkpoint.pt' if args.resume else 'checkpoint_best.pt'))
         if len(ckpts) == 0:
             args.resume = False
+            print("Resume 2 to false")
             print('\nNo checkpoints found. Beginning from epoch #0')
         else:
             checkpoint = torch.load(ckpts[0], map_location=device)
@@ -143,8 +159,8 @@ if __name__ =='__main__':
     print()
 
     wandb.init(
-        project="ano-synth",
-        entity="ff2023",
+        project="ano-synth",#ano-synth #ano-synth-2
+        entity="ff2023",#ff2023 #ml_projects
         save_code=True,
         name=args.name,
         settings=wandb.Settings(start_method="fork"),
@@ -182,6 +198,7 @@ if __name__ =='__main__':
         opt = torch.optim.AdamW(model.parameters(), args.lr)
     # Try to load most recent weight
     if args.resume or args.resume_best:
+        print("Resume 3")
         model.load_state_dict(checkpoint["net"])
         opt.load_state_dict(checkpoint["opt"])
         start_epoch = checkpoint["epoch"]
@@ -205,10 +222,13 @@ if __name__ =='__main__':
         lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
         
     if args.synth:
+        print("reading synth data")
         your_train_data, your_eval_data = dataloaders.get_synth_data()
     elif args.mix:
+        print("reading mix data")
         your_train_data, your_eval_data = dataloaders.get_mix_data()
     else:
+        print("reading mri data")
         your_train_data, your_eval_data = dataloaders.get_mri_data()
     dataset_output = your_train_data[0]    
     dataset_output = your_eval_data[0]
@@ -277,4 +297,4 @@ if __name__ =='__main__':
                     "metric": Metric(metric_best).state_dict()
                 },
                 os.path.join(args.root, args.name,'checkpoint.pt'.format(epoch)))
-            
+    finish_wandb()
