@@ -299,7 +299,7 @@ def train_epoch_ae(train_iter, epoch_length, train_loader, opt, model, epoch, de
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1)})
     return train_iter
 
-def train_epoch_rae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp, recon_weight):
+def train_epoch_rae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp, beta):
     model.train()
     epoch_loss = 0
     grad_loss = 0
@@ -328,7 +328,7 @@ def train_epoch_rae(train_iter, epoch_length, train_loader, opt, model, epoch, d
             recons_loss = l2(reconstruction, images)
             grads_loss = rae_penalty(model, images, z)
             zs_loss = z.norm(p=2.) / 2.
-            loss = recon_weight * recons_loss.sum() + 0.1 * grads_loss + 0.01 * zs_loss
+            loss = recons_loss.sum() + beta * grads_loss + 0.1 * beta * zs_loss
             assert loss.isnan().sum() == 0, "NaN found in loss!"
         if amp:
             scaler.scale(loss).backward()
@@ -351,7 +351,7 @@ def train_epoch_rae(train_iter, epoch_length, train_loader, opt, model, epoch, d
                                   "z_loss": z_loss / (step + 1)})
     return train_iter
 
-def train_epoch_samba(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp, recon_weight):
+def train_epoch_samba(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp, beta):
     model.train()
     epoch_loss = 0
     kld_loss = 0
@@ -376,7 +376,7 @@ def train_epoch_samba(train_iter, epoch_length, train_loader, opt, model, epoch,
             z_mu, z_sigma = model.encode(images)
             recons_loss = samba_l2(model, images, z_mu, z_sigma)
             kl_loss = kld(z_mu, 2*(z_sigma).log())
-            loss = (recon_weight * recons_loss + kl_loss).sum()
+            loss = (recons_loss + beta * kl_loss).sum()
             assert loss.isnan().sum() == 0, "NaN found in loss!"
         if amp:
             scaler.scale(loss).backward()
@@ -395,7 +395,7 @@ def train_epoch_samba(train_iter, epoch_length, train_loader, opt, model, epoch,
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
     return train_iter
 
-def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp, recon_weight):
+def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp, beta):
     model.train()
     epoch_loss = 0
     kld_loss = 0
@@ -440,11 +440,11 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
               print("z_mu:",z_mu.size())
               print("2*((z_sigma).log()):",(2*((z_sigma).log())).size())
             #kl_loss = kld(z_mu, 2*(z_sigma).log())
-            kl_loss = kld(z_mu, 2*((z_sigma).log())) # new log var
+            kl_loss = kld(z_mu, 2 * torch.log(z_sigma)) # new log var
             if DEBUG:
               print("recons_loss:",recons_loss.size())
               print("kl_loss:",kl_loss.size())
-            loss = (recon_weight * recons_loss + kl_loss).sum() #sum() #mean
+            loss = (recons_loss + beta * kl_loss).sum() #sum() #mean
             assert loss.isnan().sum() == 0, "NaN found in loss!"
         if amp:
             scaler.scale(loss).backward()
@@ -464,52 +464,7 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
     return train_iter
 
-def train_epoch_betavae(train_iter, epoch_length, train_loader, opt, model, epoch, device, beta, amp, recon_weight):
-    model.train()
-    epoch_loss = 0
-    kld_loss = 0
-    if amp:
-        ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu")
-        scaler = GradScaler()
-    else:
-        ctx = nullcontext()
-    progress_bar = tqdm(range(epoch_length), total=epoch_length, ncols=110)
-    progress_bar.set_description(f"[Training] Epoch {epoch}")
-    if train_iter is None:
-        train_iter = iter(train_loader)
-    for step in progress_bar:
-        try:
-            batch = next(train_iter)
-        except:
-            train_iter = iter(train_loader)
-            batch = next(train_iter)
-        images = batch["image"].to(device)
-        opt.zero_grad(set_to_none=True)
-        with ctx:
-            reconstruction, z_mu, z_sigma = model(images)
-            reconstruction = torch.sigmoid(reconstruction)
-            recons_loss = l2(reconstruction, images)
-            kl_loss = kld(z_mu, 2*(z_sigma).log())
-            loss = (recon_weight * recons_loss + beta * kl_loss).sum()
-            assert loss.isnan().sum() == 0, "NaN found in loss!"
-        if amp:
-            scaler.scale(loss).backward()
-            scaler.unscale_(opt)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
-            scaler.step(opt)
-            scaler.update()
-        else:
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
-            opt.step()
-        epoch_loss += recons_loss.sum().item()
-        kld_loss += kl_loss.sum().item()
-        wandb.log({"train/recon_loss": recons_loss.sum().item()})
-        wandb.log({"train/kld_loss": kl_loss.sum().item()})
-        progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
-    return train_iter
-
-def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp, recon_weight):
+def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp, beta):
     model.train()
     epoch_loss = 0
     kld_loss = 0
@@ -534,8 +489,8 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
             reconstruction, recon_sigma, z_mu, z_sigma = model(images)
             reconstruction = torch.sigmoid(reconstruction)
             recons_loss = gauss_l2(reconstruction, recon_sigma, images)
-            kl_loss = kld(z_mu, 2*z_sigma.log())
-            loss = (recon_weight * recons_loss + kl_loss).sum()
+            kl_loss = kld(z_mu, 2 * torch.log(z_sigma))
+            loss = (recons_loss + beta * kl_loss).sum()
             assert loss.isnan().sum() == 0, "NaN found in loss!"
         if amp:
             scaler.scale(loss).backward()
@@ -554,7 +509,7 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
     return train_iter
 
-def train_epoch_molvae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp, recon_weight):
+def train_epoch_molvae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp, beta):
     model.train()
     epoch_loss = 0
     kld_loss = 0
@@ -578,8 +533,8 @@ def train_epoch_molvae(train_iter, epoch_length, train_loader, opt, model, epoch
         with ctx:
             reconstruction, z_mu, z_sigma = model(images)
             recons_loss, avg_loss, model_means, log_scales = mol(reconstruction, images)
-            kl_loss = kld(z_mu, 2*z_sigma.log())
-            loss = (recon_weight * recons_loss + kl_loss).sum()
+            kl_loss = kld(z_mu, 2 * torch.log(z_sigma))
+            loss = (recons_loss + beta * kl_loss).sum()
             assert loss.isnan().sum() == 0, "NaN found in loss!"
         if amp:
             scaler.scale(loss).backward()
@@ -598,7 +553,7 @@ def train_epoch_molvae(train_iter, epoch_length, train_loader, opt, model, epoch
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
     return train_iter
 
-def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp, recon_weight):
+def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch, device, amp):
     model.train()
     epoch_loss = 0
     quant_loss = 0
@@ -623,7 +578,7 @@ def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch,
             reconstruction, quantization_loss = model(images)
             reconstruction = torch.sigmoid(reconstruction)
             recons_loss = l2(reconstruction, images)
-            loss = recon_weight * recons_loss.sum() + quantization_loss
+            loss = recons_loss.sum() + quantization_loss
             assert loss.isnan().sum() == 0, "NaN found in loss!"
         if amp:
             scaler.scale(loss).backward()
