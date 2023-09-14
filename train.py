@@ -6,7 +6,6 @@ from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
 import train_utils
 train_utils.set_global_seed(seed= 42)
-import numpy as np
 import dataloaders
 import wandb
 import atexit
