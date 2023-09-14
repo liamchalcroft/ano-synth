@@ -64,7 +64,6 @@ if __name__ =='__main__':
         print('Cached:   ', round(torch.cuda.memory_reserved(0)/1024**3,1), 'GB')
     
     betas = list(torch.linspace(args.beta_init, args.beta_final, args.epochs//args.beta_cycles)) * args.beta_cycles
-    print(betas)
     if args.model in ['AE', 'RAE']:
         model = Autoencoder(
             spatial_dims=2,
