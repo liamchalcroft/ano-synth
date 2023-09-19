@@ -6,7 +6,6 @@ from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
 import train_utils
 train_utils.set_global_seed(seed= 42)
-
 import dataloaders
 import wandb
 import atexit
@@ -34,8 +33,8 @@ if __name__ =='__main__':
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
     parser.add_argument("--val_interval", type=int, default=2, help="Validation interval.")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
-    parser.add_argument("--beta_init", type=int, default=0, help="Initial beta (for BetaVAE only).")
-    parser.add_argument("--beta_final", type=int, default=1, help="Final beta (for BetaVAE only).")
+    parser.add_argument("--beta_init", type=float, default=0, help="Initial beta (for BetaVAE only).")
+    parser.add_argument("--beta_final", type=float, default=1, help="Final beta (for BetaVAE only).")
     parser.add_argument("--beta_cycles", type=int, default=1, help="Number of beta cycles (for BetaVAE only).")
     parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
     parser.add_argument("--mixtures", type=int, default=10, help="Number of mixtures for MOLVAE.")
@@ -63,7 +62,7 @@ if __name__ =='__main__':
         print('Allocated:', round(torch.cuda.memory_allocated(0)/1024**3,1), 'GB')
         print('Cached:   ', round(torch.cuda.memory_reserved(0)/1024**3,1), 'GB')
     
-    betas = list(range(args.beta_init, args.beta_final, args.epochs//args.beta_cycles)) * args.beta_cycles
+    betas = list(torch.linspace(args.beta_init, args.beta_final, args.epochs//args.beta_cycles)) * args.beta_cycles
     if args.model in ['AE', 'RAE']:
         model = Autoencoder(
             spatial_dims=2,
