@@ -700,7 +700,7 @@ def val_epoch_samba(val_loader, model, device, amp, epoch):
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
                 with ctx:
-                    samples.append(model.decode(torch.randn_like(z))[0].cpu().float())
+                    samples.append(torch.sigmoid(model.decode(torch.randn_like(z_mu))[0]).cpu().float())
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
@@ -742,7 +742,7 @@ def val_epoch_vae(val_loader, model, device, amp, epoch):
                 inputs.append(images[0].cpu().float())
                 recons.append(reconstruction[0].cpu().float())
                 with ctx:
-                    samples.append(model.decode(torch.randn_like(z_mu))[0].cpu().float())
+                    samples.append(torch.sigmoid(model.decode(torch.randn_like(z_mu))[0]).cpu().float())
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
@@ -786,7 +786,7 @@ def val_epoch_gaussvae(val_loader, model, device, amp, epoch):
                 recons.append(reconstruction[0].cpu().float())
                 sigmas.append(recon_sigma[0].cpu().float())
                 with ctx:
-                    samples.append(model.decode(torch.randn_like(z_mu))[0][0].cpu().float())
+                    samples.append(torch.sigmoid(model.decode(torch.randn_like(z_mu))[0][0]).cpu().float())
             elif val_step == 16:
                 grid_inputs = make_grid(inputs, nrow=4, padding=5, normalize=True, scale_each=True)
                 grid_recons = make_grid(recons, nrow=4, padding=5, normalize=True, scale_each=True)
