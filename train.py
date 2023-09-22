@@ -9,6 +9,8 @@ train_utils.set_global_seed(seed= 42)
 import dataloaders
 import wandb
 import atexit
+import logging
+logging.getLogger("monai").setLevel(logging.ERROR)
 
 def finish_wandb():
   """
