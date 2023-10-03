@@ -184,19 +184,13 @@ if __name__ =='__main__':
     if args.resume or args.resume_best:
         model.load_state_dict(checkpoint["net"])
         opt.load_state_dict(checkpoint["opt"])
-        start_epoch = checkpoint["epoch"]
+        start_epoch = checkpoint["epoch"] +1
         metric_best = checkpoint["metric"]
-        if wandb.config["epochs"] == args.epochs:
-            # correct scheduler in cases where max epochs has changed
-            def lambda1(epoch):
-                return (1 - (epoch) / args.epochs) ** 0.9
-            lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
-            lr_scheduler.load_state_dict(checkpoint["lr"])
-        else:
-            # correct scheduler in cases where max epochs has changed
-            def lambda1(epoch):
-                return (1 - (epoch+start_epoch) / args.epochs) ** 0.9
-            lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
+        # correct scheduler in cases where max epochs has changed
+        def lambda1(epoch):
+            return (1 - (epoch+start_epoch-1) / args.epochs) ** 0.9
+        lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
+        lr_scheduler.step()
     else:
         start_epoch = 0
         metric_best = 0
