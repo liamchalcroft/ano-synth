@@ -235,6 +235,7 @@ if __name__ =='__main__':
             wandb.log({"train/beta": betas[epoch]})
         elif args.model == 'VQVAE':
             train_iter = train_utils.train_epoch_vqvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
+        wandb.log({"train/learning_rate": lr_scheduler.get_lr()})
         lr_scheduler.step()
 
         if (epoch + 1) % args.val_interval == 0:
