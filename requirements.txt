@@ -1,0 +1,12 @@
+torch --index-url https://download.pytorch.org/whl/cu118
+torchvision --index-url https://download.pytorch.org/whl/cu118
+torchaudio --index-url https://download.pytorch.org/whl/cu118
+pytorch-ignite==0.4.12
+monai==1.1.0
+pythae==0.1.1
+torchio==0.18.87
+wandb==0.15.4
+cupy-cuda11x==12.1.0
+opencv-python==4.7.0.72
+numba==0.57.1
+numpy==1.24.4
