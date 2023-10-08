@@ -32,11 +32,11 @@ if __name__ =='__main__':
                         choices=["AE", "RAE", "SAMBA", "VAE", "GaussVAE", "MOLVAE", "VQVAE"])
     parser.add_argument("--epochs", type=int, default=1000, help="Number of epochs for training.")
     parser.add_argument("--epoch_length", type=int, default=200, help="Number of iterations per epoch.")
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate.")
-    parser.add_argument("--val_interval", type=int, default=10, help="Validation interval.")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate.")
+    parser.add_argument("--val_interval", type=int, default=50, help="Validation interval.")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size.")
     parser.add_argument("--beta_init", type=float, default=0, help="Initial beta (for BetaVAE only).")
-    parser.add_argument("--beta_final", type=float, default=0.1, help="Final beta (for BetaVAE only).")
+    parser.add_argument("--beta_final", type=float, default=0.01, help="Final beta (for BetaVAE only).")
     parser.add_argument("--beta_cycles", type=int, default=1, help="Number of beta cycles (for BetaVAE only).")
     parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
     parser.add_argument("--mixtures", type=int, default=10, help="Number of mixtures for MOLVAE.")
@@ -184,19 +184,13 @@ if __name__ =='__main__':
     if args.resume or args.resume_best:
         model.load_state_dict(checkpoint["net"])
         opt.load_state_dict(checkpoint["opt"])
-        start_epoch = checkpoint["epoch"]
+        start_epoch = checkpoint["epoch"] +1
         metric_best = checkpoint["metric"]
-        if wandb.config["epochs"] == args.epochs:
-            # correct scheduler in cases where max epochs has changed
-            def lambda1(epoch):
-                return (1 - (epoch) / args.epochs) ** 0.9
-            lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
-            lr_scheduler.load_state_dict(checkpoint["lr"])
-        else:
-            # correct scheduler in cases where max epochs has changed
-            def lambda1(epoch):
-                return (1 - (epoch+start_epoch) / args.epochs) ** 0.9
-            lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
+        # correct scheduler in cases where max epochs has changed
+        def lambda1(epoch):
+            return (1 - (epoch+start_epoch-1) / args.epochs) ** 0.9
+        lr_scheduler = LambdaLR(opt, lr_lambda=[lambda1])
+        lr_scheduler.step()
     else:
         start_epoch = 0
         metric_best = 0
@@ -241,6 +235,7 @@ if __name__ =='__main__':
             wandb.log({"train/beta": betas[epoch]})
         elif args.model == 'VQVAE':
             train_iter = train_utils.train_epoch_vqvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
+        wandb.log({"train/learning_rate": lr_scheduler.get_lr()[0]})
         lr_scheduler.step()
 
         if (epoch + 1) % args.val_interval == 0:
