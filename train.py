@@ -131,8 +131,8 @@ if __name__ =='__main__':
             num_res_channels=(16,16,32,64,128,128),
             num_embeddings=32,
             embedding_dim=64,
-            downsample_parameters=tuple(6*[(2, 4, 1, 1)]),
-            upsample_parameters=tuple(6*[(2, 4, 1, 1, 0)]),
+            downsample_parameters=tuple([(1, 4, 1, 1)]+5*[(2, 4, 1, 1)]),
+            upsample_parameters=tuple([(1, 4, 1, 1, 0)]+5*[(2, 4, 1, 1, 0)]),
         ).to(device)
 
     if args.resume or args.resume_best:
