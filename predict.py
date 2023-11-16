@@ -141,6 +141,8 @@ if __name__ =='__main__':
         item = transforms(unmodified_item)
         fname = item["fname"]
         img = item["image"].to(device)[None]
+        print()
+        print(img.shape)
 
         with torch.no_grad():
             with ctx:
