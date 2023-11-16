@@ -178,8 +178,8 @@ if __name__ =='__main__':
 
         reconstruction = inverted_pred["image"]
         img = unmodified_item["image"]
-        print(type(unmodified_item["image"]))
-        affine = unmodified_item['image_meta_dict']['original_affine'][0].numpy()
+        affine = unmodified_item["image"].affine.numpy()
+        print(affine.shape)
                     
         recon_scores.append({
             "fname": fname, 
