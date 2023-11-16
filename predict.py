@@ -4,7 +4,6 @@ from models import Autoencoder, AutoencoderKL, GaussAutoencoderKL, VQVAE
 import torch
 import monai as mn
 import nibabel as nb
-train_utils.set_global_seed(seed= 42)
 import tqdm
 import logging
 from contextlib import nullcontext
@@ -188,3 +187,10 @@ if __name__ =='__main__':
         })
 
         nb.save(nb.Nifti1Image(reconstruction, affine), os.path.join(odir, fname+".nii.gz"))
+
+    myFile = open(os.path.join(odir, 'scores.csv'), 'w')
+    writer = csv.writer(myFile)
+    writer.writerow(['fname', 'l2', 'ssim'])
+    for dictionary in recon_scores:
+        writer.writerow(dictionary.values())
+    myFile.close()
