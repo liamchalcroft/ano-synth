@@ -180,6 +180,7 @@ if __name__ =='__main__':
         img = unmodified_item["image"]
         affine = unmodified_item["image"].affine.numpy()
         print(affine.shape)
+        print(reconstruction.shape, img.shape)
                     
         recon_scores.append({
             "fname": fname, 
