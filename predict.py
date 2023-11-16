@@ -186,8 +186,8 @@ if __name__ =='__main__':
                     
         recon_scores.append({
             "fname": fname, 
-            "l2": float(l2(torch.Tensor(reconstruction[None]), torch.Tensor(img[None]))),
-            "ssim": (ssim(torch.Tensor(reconstruction[None]), torch.Tensor(img[None])))
+            "l2": float(l2(torch.Tensor(reconstruction[None]), torch.Tensor(img[None,None]))),
+            "ssim": (ssim(torch.Tensor(reconstruction[None]), torch.Tensor(img[None,None])))
         })
 
         nb.save(nb.Nifti1Image(reconstruction, affine), os.path.join(odir, fname+".nii.gz"))
