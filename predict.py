@@ -121,10 +121,10 @@ if __name__ =='__main__':
 
     load = mn.transforms.LoadImageD(keys=["image"])
     transforms = mn.transforms.Compose([
-        mn.transforms.EnsureChannelFirstD(keys=["image"]),
-        mn.transforms.OrientationD(keys=["image"], axcodes="RAS"),
         mn.transforms.ToTensorD(keys=["image"], 
                                 dtype=float),
+        mn.transforms.EnsureChannelFirstD(keys=["image"]),
+        mn.transforms.OrientationD(keys=["image"], axcodes="RAS"),
         mn.transforms.SpacingD(keys=["image"], pixdim=(1,1,-1), mode=["bilinear"]),
         mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224,-1), mode=["bilinear"]),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
