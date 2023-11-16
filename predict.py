@@ -171,16 +171,18 @@ if __name__ =='__main__':
                     reconstruction = torch.sigmoid(reconstruction)
 
         reconstruction = reconstruction[0]
-        reconstruction.applied_operations = item["image"].applied_operations
+        # reconstruction.applied_operations = item["image"].applied_operations
 
-        pred_dict = {}
-        pred_dict["image"] = reconstruction
-        with mn.transforms.utils.allow_missing_keys_mode(transforms):
-            inverted_pred = transforms.inverse(pred_dict)
+        # pred_dict = {}
+        # pred_dict["image"] = reconstruction
+        # with mn.transforms.utils.allow_missing_keys_mode(transforms):
+        #     inverted_pred = transforms.inverse(pred_dict)
 
-        reconstruction = inverted_pred["image"]
-        img = unmodified_item["image"]
-        affine = unmodified_item["image"].affine.numpy()
+        # reconstruction = inverted_pred["image"]
+        # img = unmodified_item["image"]
+        # affine = unmodified_item["image"].affine.numpy()
+
+        affine = img.affine[0].numpy()
         print(affine.shape)
         print(reconstruction.shape, img.shape)
                     
