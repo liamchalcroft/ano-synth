@@ -28,7 +28,7 @@ if __name__ =='__main__':
 
     assert os.path.exists(os.path.join(args.root, args.name, "checkpoint.pt"))
     odir = os.path.join(args.root, args.name, "predictions", args.data_name)
-    os.makedirs(odir)
+    os.makedirs(odir, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print('\nUsing device:', device)
     #Additional Info when using cuda
