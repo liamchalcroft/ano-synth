@@ -183,7 +183,8 @@ if __name__ =='__main__':
         # affine = unmodified_item["image"].affine.numpy()
 
         affine = img.affine.numpy()
-        img = img[0,0]
+        img = img[0,0].numpy()
+        reconstruction = reconstruction.numpy()
 
         print(affine.shape)
         print(reconstruction.shape, img.shape)
