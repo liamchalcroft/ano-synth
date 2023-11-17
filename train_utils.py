@@ -139,6 +139,7 @@ def samba_l2(model, x, z_mu, z_std):
     print(grad.shape)
     print(grad.min().item(), grad.max().item())
     scale = (z_mu.size(1) ** 0.5) / grad.norm(p=2., dim=1, keepdim=True)
+    scale = torch.clamp(scale, 1e-5, 1e5)
     print(scale.shape)
     print(scale.min().item(), scale.max().item())
     return l2(model.decode(z_mu + scale * z_std * grad), x)
