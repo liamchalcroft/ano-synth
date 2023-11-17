@@ -194,7 +194,7 @@ if __name__ =='__main__':
             "ssim": (ssim(reconstruction[None], img[None]))
         })
 
-        nb.save(nb.Nifti1Image(reconstruction[0].cpu().numpy(), affine), os.path.join(odir, fname+".nii.gz"))
+        nb.save(nb.Nifti1Image(reconstruction[0,0].cpu().numpy(), affine), os.path.join(odir, fname+".nii.gz"))
 
     myFile = open(os.path.join(odir, 'scores.csv'), 'w')
     writer = csv.writer(myFile)
