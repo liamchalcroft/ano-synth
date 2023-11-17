@@ -124,6 +124,7 @@ if __name__ =='__main__':
         # mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224,-1), mode=["bilinear"]),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
+    rescale = mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=99.5, b_min=0, b_max=1, clip=True)
 
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if args.amp else nullcontext()
 
@@ -191,8 +192,8 @@ if __name__ =='__main__':
                     
         recon_scores.append({
             "fname": fname, 
-            "l2": float(l2(reconstruction[None], img[None])),
-            "ssim": float(ssim(reconstruction[None], img[None]))
+            "l2": float(l2(rescale(reconstruction)[None], rescale(img)[None])),
+            "ssim": float(ssim(rescale(reconstruction)[None], rescale(img)[None]))
         })
 
         nb.save(nb.Nifti1Image(reconstruction[0].cpu().numpy().astype(np.int16), affine), os.path.join(odir, fname+".nii.gz"))
