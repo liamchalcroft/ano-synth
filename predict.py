@@ -210,9 +210,9 @@ if __name__ =='__main__':
 
         # break
 
-        nb.save(nb.Nifti1Image(reconstruction[0].cpu().numpy(), image.affine, image.header), 
+        nb.save(nb.Nifti1Image(reconstruction[0], image.affine, image.header), 
                 os.path.join(odir, fname+".nii.gz"))
-        nb.save(nb.Nifti1Image(anomaly[0].cpu().numpy(), image.affine, image.header), 
+        nb.save(nb.Nifti1Image(anomaly[0], image.affine, image.header), 
                 os.path.join(odir, "ANOMALY_"+fname+".nii.gz"))
 
         break
