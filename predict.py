@@ -124,8 +124,14 @@ if __name__ =='__main__':
         # mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224,-1), mode=["bilinear"]),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
-    rescale_clip = mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=99.5, b_min=0, b_max=1, clip=True)
-    rescale = mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=99.5, b_min=0, b_max=1, clip=False)
+    rescale_clip = mn.transforms.Compose([
+        mn.transforms.ToTensorD(keys=["image"], device=device, dtype=torch.float32),
+        mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=99.5, b_min=0, b_max=1, clip=True)
+    ])
+    rescale = mn.transforms.Compose([
+        mn.transforms.ToTensorD(keys=["image"], device=device, dtype=torch.float32),
+        mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=99.5, b_min=0, b_max=1, clip=False)
+    ])
 
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if args.amp else nullcontext()
 
