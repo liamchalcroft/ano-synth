@@ -112,16 +112,11 @@ if __name__ =='__main__':
     img_list = [{"image": img, "fname": img.split('/')[-1].split('.')[0]} for img in img_list]
     print("\nTotal Images: {}".format(len(img_list)))
 
-    load = mn.transforms.Compose([
-        mn.transforms.LoadImageD(keys=["image"]),
-        mn.transforms.ToTensorD(keys=["image"], device=device, dtype=torch.float32),
-        mn.transforms.EnsureChannelFirstD(keys=["image"]),
-    ])
     transforms = mn.transforms.Compose([
         mn.transforms.ToTensorD(keys=["image"], device=device, dtype=torch.float32),
         mn.transforms.OrientationD(keys=["image"], axcodes="LAI"),
-        mn.transforms.SpacingD(keys=["image"], pixdim=(1,1,-1), mode=["bilinear"]),
-        mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224,-1), mode=["bilinear"]),
+        mn.transforms.SpacingD(keys=["image"], pixdim=(1,-1,1), mode=["bilinear"]),
+        mn.transforms.ResizeD(keys=["image"], spatial_size=(224,-1,224), mode=["bilinear"]),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
     rescale_clip = mn.transforms.Compose([
@@ -135,12 +130,11 @@ if __name__ =='__main__':
 
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if args.amp else nullcontext()
 
-    inferer = mn.inferers.SliceInferer(roi_size=(224,224), spatial_dim=2, sw_batch_size=args.slice_batch_size)
+    inferer = mn.inferers.SliceInferer(roi_size=(224,224), spatial_dim=1, sw_batch_size=args.slice_batch_size)
 
     recon_scores = []
 
     for item in tqdm.tqdm(img_list, total=len(img_list)):
-        # unmodified_item = load(item)
         image = nb.load(item["image"]) # nibabel image
         unmodified_item = {"image": image.get_fdata()[None], "fname": item["fname"]}
         print()
