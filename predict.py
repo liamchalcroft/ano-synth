@@ -174,9 +174,10 @@ if __name__ =='__main__':
         reconstruction.applied_operations = item["image"].applied_operations
 
         pred_dict = {}
-        pred_dict["image"] = reconstruction
+        # pred_dict["image"] = reconstruction
+        item["image"] = reconstruction
         with mn.transforms.utils.allow_missing_keys_mode(transforms):
-            inverted_pred = transforms.inverse(pred_dict)
+            inverted_pred = transforms.inverse(item)
 
         reconstruction = inverted_pred["image"]
         img = unmodified_item["image"]
