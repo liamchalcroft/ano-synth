@@ -209,7 +209,7 @@ if __name__ =='__main__':
             "ssim": float(ssim(rescale(reconstruction)[None], rescale_clip(img)[None]))
         })
 
-        nb.save(nb.Nifti1Image(reconstruction[0].cpu().numpy(), image.affine, image.header), os.path.join(odir, fname+".nii.gz"))
+        nb.save(nb.Nifti1Image(reconstruction[0], image.affine, image.header), os.path.join(odir, fname+".nii.gz"))
 
         break
 
