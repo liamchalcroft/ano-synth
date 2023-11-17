@@ -186,6 +186,7 @@ if __name__ =='__main__':
             inverted_pred = transforms.inverse(pred_dict)
         reconstruction = inverted_pred["image"]
 
+        _ = transforms(unmodified_item)
         pred_dict = {}
         pred_dict["image"] = anomaly
         with mn.transforms.utils.allow_missing_keys_mode(transforms):
