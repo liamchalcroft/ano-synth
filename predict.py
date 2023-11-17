@@ -125,11 +125,11 @@ if __name__ =='__main__':
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
     rescale_clip = mn.transforms.Compose([
-        mn.transforms.ToTensorD(keys=["image"], device=device, dtype=torch.float32),
+        mn.transforms.ToTensor(device=device, dtype=torch.float32),
         mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=99.5, b_min=0, b_max=1, clip=True)
     ])
     rescale = mn.transforms.Compose([
-        mn.transforms.ToTensorD(keys=["image"], device=device, dtype=torch.float32),
+        mn.transforms.ToTensor(device=device, dtype=torch.float32),
         mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=100, b_min=0, b_max=1, clip=False)
     ])
 
