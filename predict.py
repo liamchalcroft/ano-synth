@@ -183,6 +183,7 @@ if __name__ =='__main__':
 
         print(affine.shape)
         print(reconstruction.shape, img.shape)
+        print(reconstruction.dtype, img.dtype)
                     
         recon_scores.append({
             "fname": fname, 
