@@ -132,10 +132,11 @@ if __name__ =='__main__':
 
     for item in tqdm.tqdm(img_list, total=len(img_list)):
         unmodified_item = load(item)
+        print()
+        print(unmodified_item["image"].shape)
         item = transforms(unmodified_item)
         fname = item["fname"]
         img = item["image"][None]
-        print()
         print(img.shape)
 
         with torch.no_grad():
