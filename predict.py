@@ -162,10 +162,15 @@ if __name__ =='__main__':
                     reconstruction, quantization_loss = inferer(img, model)
                     reconstruction = torch.sigmoid(reconstruction)
 
+        print(fname)
+        print(reconstruction.shape, img.shape)
+        print(reconstruction.dtype, img.dtype)
+        print(reconstruction.max().item(), img.max().item())
+
         recon_scores.append({
             "fname": fname, 
-            "l2": float(l2(reconstruction[None], img[None])),
-            "ssim": float(ssim(reconstruction[None], img[None]))
+            "l2": float(l2(reconstruction, img)),
+            "ssim": float(ssim(reconstruction, img))
         })
         anomaly = (reconstruction - img)**2
 
