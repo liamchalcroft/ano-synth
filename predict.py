@@ -114,7 +114,7 @@ if __name__ =='__main__':
     load = mn.transforms.Compose([
         mn.transforms.LoadImageD(keys=["image"]),
         mn.transforms.ToTensorD(keys=["image"], 
-                                dtype=float, device=device),
+                                dtype=torch.float32, device=device),
         mn.transforms.EnsureChannelFirstD(keys=["image"]),
     ])
     transforms = mn.transforms.Compose([
