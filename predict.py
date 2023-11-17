@@ -142,7 +142,7 @@ if __name__ =='__main__':
     for item in tqdm.tqdm(img_list, total=len(img_list)):
         # unmodified_item = load(item)
         image = nb.load(item["image"]) # nibabel image
-        unmodified_item = {"image": image.get_data()[None], "fname": item["fname"]}
+        unmodified_item = {"image": image.get_fdata()[None], "fname": item["fname"]}
         print()
         print(unmodified_item["image"].shape)
         item = transforms(unmodified_item)
