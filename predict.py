@@ -119,14 +119,6 @@ if __name__ =='__main__':
         mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224,-1), mode=["bilinear"]),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
-    rescale_clip = mn.transforms.Compose([
-        mn.transforms.ToTensor(device=device, dtype=torch.float32),
-        mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=99.5, b_min=0, b_max=1, clip=True)
-    ])
-    rescale = mn.transforms.Compose([
-        mn.transforms.ToTensor(device=device, dtype=torch.float32),
-        mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=100, b_min=0, b_max=1, clip=False)
-    ])
 
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if args.amp else nullcontext()
 
@@ -172,14 +164,28 @@ if __name__ =='__main__':
 
         reconstruction = reconstruction[0]
 
+        recon_scores.append({
+            "fname": fname, 
+            "l2": float(l2(reconstruction[None], img[None])),
+            "ssim": float(ssim(reconstruction[None], img[None]))
+        })
+        anomaly = (reconstruction - img)**2
+
         reconstruction.applied_operations = item["image"].applied_operations
+        anomaly.applied_operations = item["image"].applied_operations
 
         pred_dict = {}
         pred_dict["image"] = reconstruction
         with mn.transforms.utils.allow_missing_keys_mode(transforms):
             inverted_pred = transforms.inverse(pred_dict)
-
         reconstruction = inverted_pred["image"]
+
+        pred_dict = {}
+        pred_dict["image"] = anomaly
+        with mn.transforms.utils.allow_missing_keys_mode(transforms):
+            inverted_pred = transforms.inverse(pred_dict)
+        anomaly = inverted_pred["image"]
+
         img = unmodified_item["image"]
         reconstruction *= np.percentile(img, 99.5)
         reconstruction = reconstruction.astype(img.dtype)
@@ -196,18 +202,10 @@ if __name__ =='__main__':
         print(reconstruction.max().item(), img.max().item())
 
         # break
-                    
-        recon_scores.append({
-            "fname": fname, 
-            "l2": float(l2(rescale(reconstruction)[None], rescale_clip(img)[None])),
-            "ssim": float(ssim(rescale(reconstruction)[None], rescale_clip(img)[None]))
-        })
 
-        anomaly = ((rescale(reconstruction) - rescale_clip(img))**2).cpu().numpy()
-
-        nb.save(nb.Nifti1Image(reconstruction[0], image.affine, image.header), 
+        nb.save(nb.Nifti1Image(reconstruction[0].cpu().numpy(), image.affine, image.header), 
                 os.path.join(odir, fname+".nii.gz"))
-        nb.save(nb.Nifti1Image(anomaly[0], image.affine, image.header), 
+        nb.save(nb.Nifti1Image(anomaly[0].cpu().numpy(), image.affine, image.header), 
                 os.path.join(odir, "ANOMALY_"+fname+".nii.gz"))
 
         break
