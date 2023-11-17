@@ -194,6 +194,7 @@ if __name__ =='__main__':
             "l2": float(l2(reconstruction[None], img[None])),
             "ssim": (ssim(reconstruction[None], img[None]))
         })
+        print((ssim(reconstruction[None], img[None])).shape)
 
         nb.save(nb.Nifti1Image(reconstruction[0].cpu().numpy().astype(np.int16), affine), os.path.join(odir, fname+".nii.gz"))
 
