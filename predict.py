@@ -111,11 +111,13 @@ if __name__ =='__main__':
     img_list = [{"image": img, "fname": img.split('/')[-1].split('.')[0]} for img in img_list]
     print("\nTotal Images: {}".format(len(img_list)))
 
-    load = mn.transforms.LoadImageD(keys=["image"])
-    transforms = mn.transforms.Compose([
+    load = mn.transforms.Compose([
+        mn.transforms.LoadImageD(keys=["image"]),
         mn.transforms.ToTensorD(keys=["image"], 
                                 dtype=float),
         mn.transforms.EnsureChannelFirstD(keys=["image"]),
+    ])
+    transforms = mn.transforms.Compose([
         mn.transforms.OrientationD(keys=["image"], axcodes="RAS"),
         mn.transforms.SpacingD(keys=["image"], pixdim=(1,1,-1), mode=["bilinear"]),
         mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224,-1), mode=["bilinear"]),
@@ -163,20 +165,21 @@ if __name__ =='__main__':
                     reconstruction = torch.sigmoid(reconstruction)
 
         reconstruction = reconstruction[0]
-        # reconstruction.applied_operations = item["image"].applied_operations
+        
+        reconstruction.applied_operations = item["image"].applied_operations
 
-        # pred_dict = {}
-        # pred_dict["image"] = reconstruction
-        # with mn.transforms.utils.allow_missing_keys_mode(transforms):
-        #     inverted_pred = transforms.inverse(pred_dict)
+        pred_dict = {}
+        pred_dict["image"] = reconstruction
+        with mn.transforms.utils.allow_missing_keys_mode(transforms):
+            inverted_pred = transforms.inverse(pred_dict)
 
-        # reconstruction = inverted_pred["image"]
-        # img = unmodified_item["image"]
-        # affine = unmodified_item["image"].affine.numpy()
+        reconstruction = inverted_pred["image"]
+        img = unmodified_item["image"]
+        affine = unmodified_item["image"].affine.numpy()
 
-        affine = img.affine.numpy()
-        img = img[0,0].cpu().numpy()
-        reconstruction = reconstruction.cpu().numpy()
+        # affine = img.affine.numpy()
+        # img = img[0,0].cpu().numpy()
+        # reconstruction = reconstruction.cpu().numpy()
 
         print(affine.shape)
         print(reconstruction.shape, img.shape)
