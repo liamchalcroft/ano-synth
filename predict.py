@@ -118,6 +118,7 @@ if __name__ =='__main__':
         mn.transforms.EnsureChannelFirstD(keys=["image"]),
     ])
     transforms = mn.transforms.Compose([
+        mn.transforms.ToTensorD(keys=["image"], device=device, dtype=torch.float32),
         # mn.transforms.OrientationD(keys=["image"], axcodes="RAS"),
         # mn.transforms.SpacingD(keys=["image"], pixdim=(1,1,-1), mode=["bilinear"]),
         # mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224,-1), mode=["bilinear"]),
@@ -132,7 +133,9 @@ if __name__ =='__main__':
     recon_scores = []
 
     for item in tqdm.tqdm(img_list, total=len(img_list)):
-        unmodified_item = load(item)
+        # unmodified_item = load(item)
+        image = nb.load(item["image"]) # nibabel image
+        unmodified_item = {"image": image.get_data()[None], "fname": item["fname"]}
         print()
         print(unmodified_item["image"].shape)
         item = transforms(unmodified_item)
@@ -186,6 +189,7 @@ if __name__ =='__main__':
         print(affine.shape)
         print(reconstruction.shape, img.shape)
         print(reconstruction.dtype, img.dtype)
+        print(reconstruction.max().item(), img.max().item())
 
         # break
                     
