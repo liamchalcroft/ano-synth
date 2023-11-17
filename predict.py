@@ -124,7 +124,8 @@ if __name__ =='__main__':
         # mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224,-1), mode=["bilinear"]),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
-    rescale = mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=99.5, b_min=0, b_max=1, clip=True)
+    rescale_clip = mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=99.5, b_min=0, b_max=1, clip=True)
+    rescale = mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=99.5, b_min=0, b_max=1, clip=False)
 
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if args.amp else nullcontext()
 
@@ -174,13 +175,14 @@ if __name__ =='__main__':
         reconstruction.applied_operations = item["image"].applied_operations
 
         pred_dict = {}
-        # pred_dict["image"] = reconstruction
-        item["image"] = reconstruction
+        pred_dict["image"] = reconstruction
         with mn.transforms.utils.allow_missing_keys_mode(transforms):
-            inverted_pred = transforms.inverse(item)
+            inverted_pred = transforms.inverse(pred_dict)
 
         reconstruction = inverted_pred["image"]
         img = unmodified_item["image"]
+        reconstruction *= np.percentile(img, 99.5)
+        reconstruction = reconstruction.astype(img.dtype)
         # affine = unmodified_item["image"].affine.numpy()
 
         # affine = img.affine.numpy()
@@ -196,8 +198,8 @@ if __name__ =='__main__':
                     
         recon_scores.append({
             "fname": fname, 
-            "l2": float(l2(rescale(reconstruction)[None], rescale(img)[None])),
-            "ssim": float(ssim(rescale(reconstruction)[None], rescale(img)[None]))
+            "l2": float(l2(rescale(reconstruction)[None], rescale_clip(img)[None])),
+            "ssim": float(ssim(rescale(reconstruction)[None], rescale_clip(img)[None]))
         })
 
         nb.save(nb.Nifti1Image(reconstruction[0].cpu().numpy(), image.affine, image.header), os.path.join(odir, fname+".nii.gz"))
