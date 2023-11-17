@@ -178,7 +178,6 @@ if __name__ =='__main__':
         anomaly = anomaly[0]
 
         reconstruction.applied_operations = item["image"].applied_operations
-        anomaly.applied_operations = item["image"].applied_operations
 
         pred_dict = {}
         pred_dict["image"] = reconstruction
@@ -186,7 +185,8 @@ if __name__ =='__main__':
             inverted_pred = transforms.inverse(pred_dict)
         reconstruction = inverted_pred["image"]
 
-        _ = transforms(unmodified_item)
+        item = transforms(unmodified_item)
+        anomaly.applied_operations = item["image"].applied_operations
         pred_dict = {}
         pred_dict["image"] = anomaly
         with mn.transforms.utils.allow_missing_keys_mode(transforms):
