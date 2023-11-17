@@ -114,7 +114,7 @@ if __name__ =='__main__':
     load = mn.transforms.Compose([
         mn.transforms.LoadImageD(keys=["image"]),
         mn.transforms.ToTensorD(keys=["image"], 
-                                dtype=float),
+                                dtype=float, device=device),
         mn.transforms.EnsureChannelFirstD(keys=["image"]),
     ])
     transforms = mn.transforms.Compose([
@@ -134,7 +134,7 @@ if __name__ =='__main__':
         unmodified_item = load(item)
         item = transforms(unmodified_item)
         fname = item["fname"]
-        img = item["image"].to(device)[None]
+        img = item["image"][None]
         print()
         print(img.shape)
 
@@ -165,7 +165,7 @@ if __name__ =='__main__':
                     reconstruction = torch.sigmoid(reconstruction)
 
         reconstruction = reconstruction[0]
-        
+
         reconstruction.applied_operations = item["image"].applied_operations
 
         pred_dict = {}
@@ -186,11 +186,11 @@ if __name__ =='__main__':
                     
         recon_scores.append({
             "fname": fname, 
-            "l2": float(l2(torch.Tensor(reconstruction[None]), torch.Tensor(img[None,None]))),
-            "ssim": (ssim(torch.Tensor(reconstruction[None]), torch.Tensor(img[None,None])))
+            "l2": float(l2(reconstruction[None], img[None])),
+            "ssim": (ssim(reconstruction[None], img[None]))
         })
 
-        nb.save(nb.Nifti1Image(reconstruction[0], affine), os.path.join(odir, fname+".nii.gz"))
+        nb.save(nb.Nifti1Image(reconstruction[0].cpu().numpy(), affine), os.path.join(odir, fname+".nii.gz"))
 
     myFile = open(os.path.join(odir, 'scores.csv'), 'w')
     writer = csv.writer(myFile)
