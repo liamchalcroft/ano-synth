@@ -129,12 +129,9 @@ if __name__ =='__main__':
     for item in tqdm.tqdm(img_list, total=len(img_list)):
         image = nb.load(item["image"]) # nibabel image
         unmodified_item = {"image": image.get_fdata()[None], "fname": item["fname"]}
-        print()
-        print(unmodified_item["image"].shape)
         item = transforms(unmodified_item)
         fname = item["fname"]
         img = item["image"][None]
-        print(img.shape)
 
         with torch.no_grad():
             with ctx:
@@ -161,11 +158,6 @@ if __name__ =='__main__':
                 elif args.model=="VQVAE":
                     reconstruction, quantization_loss = inferer(img, model)
                     reconstruction = torch.sigmoid(reconstruction)
-
-        print(fname)
-        print(reconstruction.shape, img.shape)
-        print(reconstruction.dtype, img.dtype)
-        print(reconstruction.max().item(), img.max().item())
 
         recon_scores.append({
             "fname": fname, 
@@ -196,26 +188,11 @@ if __name__ =='__main__':
         img = unmodified_item["image"]
         reconstruction *= np.percentile(img, 99.5)
         reconstruction = reconstruction.astype(img.dtype)
-        # affine = unmodified_item["image"].affine.numpy()
-
-        # affine = img.affine.numpy()
-        # img = img[0]
-        # reconstruction = reconstruction
-
-        # print(affine.shape)
-        print(fname)
-        print(reconstruction.shape, img.shape)
-        print(reconstruction.dtype, img.dtype)
-        print(reconstruction.max().item(), img.max().item())
-
-        # break
 
         nb.save(nb.Nifti1Image(reconstruction[0], image.affine, image.header), 
                 os.path.join(odir, fname+".nii.gz"))
         nb.save(nb.Nifti1Image(anomaly[0], image.affine, image.header), 
                 os.path.join(odir, "ANOMALY_"+fname+".nii.gz"))
-
-        break
 
     myFile = open(os.path.join(odir, 'scores.csv'), 'w')
     writer = csv.writer(myFile)
