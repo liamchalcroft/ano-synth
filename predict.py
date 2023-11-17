@@ -130,7 +130,7 @@ if __name__ =='__main__':
     ])
     rescale = mn.transforms.Compose([
         mn.transforms.ToTensorD(keys=["image"], device=device, dtype=torch.float32),
-        mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=99.5, b_min=0, b_max=1, clip=False)
+        mn.transforms.ScaleIntensityRangePercentiles(lower=0, upper=100, b_min=0, b_max=1, clip=False)
     ])
 
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if args.amp else nullcontext()
@@ -196,6 +196,7 @@ if __name__ =='__main__':
         # reconstruction = reconstruction
 
         # print(affine.shape)
+        print(fname)
         print(reconstruction.shape, img.shape)
         print(reconstruction.dtype, img.dtype)
         print(reconstruction.max().item(), img.max().item())
