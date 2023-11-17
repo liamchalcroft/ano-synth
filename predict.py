@@ -3,6 +3,7 @@ import os, csv, glob
 from models import Autoencoder, AutoencoderKL, GaussAutoencoderKL, VQVAE
 import torch
 import monai as mn
+import numpy as np
 import nibabel as nb
 import tqdm
 import logging
@@ -194,7 +195,7 @@ if __name__ =='__main__':
             "ssim": (ssim(reconstruction[None], img[None]))
         })
 
-        nb.save(nb.Nifti1Image(reconstruction[0].cpu().numpy(), affine), os.path.join(odir, fname+".nii.gz"))
+        nb.save(nb.Nifti1Image(reconstruction[0].cpu().numpy().astype(np.int16), affine), os.path.join(odir, fname+".nii.gz"))
 
         break
 
