@@ -114,11 +114,11 @@ if __name__ =='__main__':
 
     load = mn.transforms.Compose([
         mn.transforms.LoadImageD(keys=["image"]),
-        mn.transforms.ToTensorD(keys=["image"], 
-                                dtype=torch.float32, device=device),
+        mn.transforms.ToTensorD(keys=["image"], device=device),
         mn.transforms.EnsureChannelFirstD(keys=["image"]),
     ])
     transforms = mn.transforms.Compose([
+        mn.transforms.ToTensorD(keys=["image"], dtype=torch.float32),
         # mn.transforms.OrientationD(keys=["image"], axcodes="RAS"),
         # mn.transforms.SpacingD(keys=["image"], pixdim=(1,1,-1), mode=["bilinear"]),
         # mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224,-1), mode=["bilinear"]),
