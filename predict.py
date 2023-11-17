@@ -180,13 +180,13 @@ if __name__ =='__main__':
 
         reconstruction = inverted_pred["image"]
         img = unmodified_item["image"]
-        affine = unmodified_item["image"].affine.numpy()
+        # affine = unmodified_item["image"].affine.numpy()
 
         # affine = img.affine.numpy()
         # img = img[0]
         # reconstruction = reconstruction
 
-        print(affine.shape)
+        # print(affine.shape)
         print(reconstruction.shape, img.shape)
         print(reconstruction.dtype, img.dtype)
         print(reconstruction.max().item(), img.max().item())
