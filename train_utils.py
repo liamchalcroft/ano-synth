@@ -384,13 +384,15 @@ def train_epoch_samba(train_iter, epoch_length, train_loader, opt, model, epoch,
         elif amp:
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
-            scaler.step(opt)
-            scaler.update()
+            global_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            if torch.any(torch.isnan(global_norm)) or global_norm >= 100:
+                scaler.step(opt)
+                scaler.update()
         else:
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
-            opt.step()
+            global_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
+            if torch.any(torch.isnan(global_norm)) or global_norm >= 100:
+                opt.step()
         epoch_loss += recons_loss.sum().item()
         kld_loss += kl_loss.sum().item()
         wandb.log({"train/recon_loss": recons_loss.sum().item()})
