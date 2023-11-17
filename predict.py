@@ -118,7 +118,7 @@ if __name__ =='__main__':
         mn.transforms.EnsureChannelFirstD(keys=["image"]),
     ])
     transforms = mn.transforms.Compose([
-        mn.transforms.OrientationD(keys=["image"], axcodes="RAS"),
+        # mn.transforms.OrientationD(keys=["image"], axcodes="RAS"),
         # mn.transforms.SpacingD(keys=["image"], pixdim=(1,1,-1), mode=["bilinear"]),
         # mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224,-1), mode=["bilinear"]),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
@@ -194,7 +194,7 @@ if __name__ =='__main__':
             "ssim": (ssim(reconstruction[None], img[None]))
         })
 
-        nb.save(nb.Nifti1Image(reconstruction[0,0].cpu().numpy(), affine), os.path.join(odir, fname+".nii.gz"))
+        nb.save(nb.Nifti1Image(reconstruction[0].cpu().numpy(), affine), os.path.join(odir, fname+".nii.gz"))
 
     myFile = open(os.path.join(odir, 'scores.csv'), 'w')
     writer = csv.writer(myFile)
