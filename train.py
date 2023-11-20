@@ -18,6 +18,9 @@ def finish_wandb():
   """
   print("Closing wandb.. ")
   wandb.finish()
+  import torch, gc
+  gc.collect()
+  torch.cuda.empty_cache()
   print("Wandb closed")
 
 if __name__ =='__main__':
@@ -137,6 +140,7 @@ if __name__ =='__main__':
 
     if args.resume or args.resume_best:
         ckpts = glob.glob(os.path.join(args.root, args.name, 'checkpoint.pt' if args.resume else 'checkpoint_best.pt'))
+        print("ckpts:",ckpts)
         if len(ckpts) == 0:
             args.resume = False
             print('\nNo checkpoints found. Beginning from epoch #0')
@@ -240,7 +244,16 @@ if __name__ =='__main__':
             train_iter = train_utils.train_epoch_vqvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         wandb.log({"train/learning_rate": lr_scheduler.get_lr()[0]})
         lr_scheduler.step()
-
+        torch.save(
+            {
+                "net": model.state_dict(),
+                "opt": opt.state_dict(),
+                "lr": lr_scheduler.state_dict(),
+                "wandb": WandBID(wandb.run.id).state_dict(),
+                "epoch": Epoch(epoch).state_dict(),
+                "metric": Metric(metric_best).state_dict()
+            },
+            os.path.join(args.root, args.name,'checkpoint.pt'))        
         if (epoch + 1) % args.val_interval == 0:
             model.eval()
             if args.model == 'AE':
@@ -268,15 +281,15 @@ if __name__ =='__main__':
                         "epoch": Epoch(epoch).state_dict(),
                         "metric": Metric(metric_best).state_dict()
                     },
-                    os.path.join(args.root, args.name,'checkpoint_best.pt'.format(epoch)))
+                    os.path.join(args.root, args.name,'checkpoint_best.pt'))
             torch.save(
-                {
-                    "net": model.state_dict(),
-                    "opt": opt.state_dict(),
-                    "lr": lr_scheduler.state_dict(),
-                    "wandb": WandBID(wandb.run.id).state_dict(),
-                    "epoch": Epoch(epoch).state_dict(),
-                    "metric": Metric(metric_best).state_dict()
-                },
-                os.path.join(args.root, args.name,'checkpoint.pt'.format(epoch)))
+            {
+                "net": model.state_dict(),
+                "opt": opt.state_dict(),
+                "lr": lr_scheduler.state_dict(),
+                "wandb": WandBID(wandb.run.id).state_dict(),
+                "epoch": Epoch(epoch).state_dict(),
+                "metric": Metric(metric_best).state_dict()
+            },
+            os.path.join(args.root, args.name,'checkpoint_val.pt'))
     finish_wandb()
