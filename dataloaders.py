@@ -10,10 +10,6 @@ img_list_val = glob.glob("2D/val/*_image.nii.gz")
 img_list_train = sorted(img_list_train)
 img_list_val   = sorted(img_list_val)
 
-
-#img_list_train = img_list_train[:9000]
-#img_list_val   = img_list_train[:1000]
-
 shuffle(img_list_train)
 shuffle(img_list_val)
 

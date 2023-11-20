@@ -129,13 +129,6 @@ if __name__ =='__main__':
             spatial_dims=2,
             in_channels=1,
             out_channels=1,
-            num_channels=(16,16,32,64,128,128),
-            num_res_layers=2,
-            num_res_channels=(16,16,32,64,128,128),
-            num_embeddings=32,
-            embedding_dim=64,
-            downsample_parameters=tuple([(1, 4, 1, 1)]+5*[(2, 4, 1, 1)]),
-            upsample_parameters=tuple([(1, 4, 1, 1, 0)]+5*[(2, 4, 1, 1, 0)]),
         ).to(device)
 
     if args.resume or args.resume_best:
@@ -229,7 +222,11 @@ if __name__ =='__main__':
             train_iter = train_utils.train_epoch_rae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
             wandb.log({"train/beta": betas[epoch]})
         elif args.model == 'SAMBA':
-            train_iter = train_utils.train_epoch_samba(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
+            if epoch > 50:
+                train_iter = train_utils.train_epoch_samba(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
+            else:
+                train_iter = train_utils.train_epoch_vae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
+                # use VAE for initial epochs to ensure stable recon first
             wandb.log({"train/beta": betas[epoch]})
         elif args.model == 'VAE':
             train_iter = train_utils.train_epoch_vae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])

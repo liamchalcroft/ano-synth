@@ -134,7 +134,8 @@ def samba_l2(model, x, z_mu, z_std):
         z_mu.requires_grad = False
     grad = grad * z_std.mean(0, keepdim=True).detach()
     scale = (z_mu.size(1) ** 0.5) / grad.norm(p=2., dim=1, keepdim=True)
-    return l2(model.decode(z_mu + scale * z_std * grad), x)
+    scale = torch.clamp(scale, 1e-5, 1e5)
+    return l2(torch.sigmoid(model.decode(z_mu + scale * z_std * grad)), x)
 
 def compute_scales(logits):
     # https://github.com/Rayhane-mamah/Efficient-VDVAE
@@ -283,8 +284,9 @@ def train_epoch_ae(train_iter, epoch_length, train_loader, opt, model, epoch, de
             reconstruction = torch.sigmoid(reconstruction)
             recons_loss = l2(reconstruction, images)
             loss = recons_loss.sum()
-            assert loss.isnan().sum() == 0, "NaN found in loss!"
-        if amp:
+        if loss.isnan().sum() > 0:
+            print("NaN found in loss!")
+        elif amp:
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
@@ -329,8 +331,9 @@ def train_epoch_rae(train_iter, epoch_length, train_loader, opt, model, epoch, d
             grads_loss = rae_penalty(model, images, z)
             zs_loss = z.norm(p=2.) / 2.
             loss = recons_loss.sum() + beta * grads_loss + 0.1 * beta * zs_loss
-            assert loss.isnan().sum() == 0, "NaN found in loss!"
-        if amp:
+        if loss.isnan().sum() > 0:
+            print("NaN found in loss!")
+        elif amp:
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
@@ -377,8 +380,9 @@ def train_epoch_samba(train_iter, epoch_length, train_loader, opt, model, epoch,
             recons_loss = samba_l2(model, images, z_mu, z_sigma)
             kl_loss = kld(z_mu, 2*(z_sigma).log())
             loss = (recons_loss + beta * kl_loss).sum()
-            assert loss.isnan().sum() == 0, "NaN found in loss!"
-        if amp:
+        if loss.isnan().sum() > 0:
+            print("NaN found in loss!")
+        elif amp:
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
@@ -392,6 +396,7 @@ def train_epoch_samba(train_iter, epoch_length, train_loader, opt, model, epoch,
         kld_loss += kl_loss.sum().item()
         wandb.log({"train/recon_loss": recons_loss.sum().item()})
         wandb.log({"train/kld_loss": kl_loss.sum().item()})
+        wandb.log({"train/total_loss": loss.sum().item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
     return train_iter
 
@@ -445,8 +450,9 @@ def train_epoch_vae(train_iter, epoch_length, train_loader, opt, model, epoch, d
               print("recons_loss:",recons_loss.size())
               print("kl_loss:",kl_loss.size())
             loss = (recons_loss + beta * kl_loss).sum() #sum() #mean
-            assert loss.isnan().sum() == 0, "NaN found in loss!"
-        if amp:
+        if loss.isnan().sum() > 0:
+            print("NaN found in loss!")
+        elif amp:
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
@@ -491,8 +497,9 @@ def train_epoch_gaussvae(train_iter, epoch_length, train_loader, opt, model, epo
             recons_loss = gauss_l2(reconstruction, recon_sigma, images)
             kl_loss = kld(z_mu, 2 * torch.log(z_sigma))
             loss = (recons_loss + beta * kl_loss).sum()
-            assert loss.isnan().sum() == 0, "NaN found in loss!"
-        if amp:
+        if loss.isnan().sum() > 0:
+            print("NaN found in loss!")
+        elif amp:
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
@@ -535,8 +542,9 @@ def train_epoch_molvae(train_iter, epoch_length, train_loader, opt, model, epoch
             recons_loss, avg_loss, model_means, log_scales = mol(reconstruction, images)
             kl_loss = kld(z_mu, 2 * torch.log(z_sigma))
             loss = (recons_loss + beta * kl_loss).sum()
-            assert loss.isnan().sum() == 0, "NaN found in loss!"
-        if amp:
+        if loss.isnan().sum() > 0:
+            print("NaN found in loss!")
+        elif amp:
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
@@ -579,8 +587,9 @@ def train_epoch_vqvae(train_iter, epoch_length, train_loader, opt, model, epoch,
             reconstruction = torch.sigmoid(reconstruction)
             recons_loss = l2(reconstruction, images)
             loss = recons_loss.sum() + quantization_loss
-            assert loss.isnan().sum() == 0, "NaN found in loss!"
-        if amp:
+        if loss.isnan().sum() > 0:
+            print("NaN found in loss!")
+        elif amp:
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 12)
