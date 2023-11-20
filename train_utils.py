@@ -135,7 +135,7 @@ def samba_l2(model, x, z_mu, z_std):
     grad = grad * z_std.mean(0, keepdim=True).detach()
     scale = (z_mu.size(1) ** 0.5) / grad.norm(p=2., dim=1, keepdim=True)
     scale = torch.clamp(scale, 1e-5, 1e5)
-    return l2(model.decode(z_mu + scale * z_std * grad), x)
+    return l2(torch.sigmoid(model.decode(z_mu + scale * z_std * grad)), x)
 
 def compute_scales(logits):
     # https://github.com/Rayhane-mamah/Efficient-VDVAE
@@ -396,6 +396,7 @@ def train_epoch_samba(train_iter, epoch_length, train_loader, opt, model, epoch,
         kld_loss += kl_loss.sum().item()
         wandb.log({"train/recon_loss": recons_loss.sum().item()})
         wandb.log({"train/kld_loss": kl_loss.sum().item()})
+        wandb.log({"train/total_loss": loss.sum().item()})
         progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "kld_loss": kld_loss / (step + 1)})
     return train_iter
 

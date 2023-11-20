@@ -218,7 +218,11 @@ if __name__ =='__main__':
             train_iter = train_utils.train_epoch_rae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
             wandb.log({"train/beta": betas[epoch]})
         elif args.model == 'SAMBA':
-            train_iter = train_utils.train_epoch_samba(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
+            if epoch > 50:
+                train_iter = train_utils.train_epoch_samba(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
+            else:
+                train_iter = train_utils.train_epoch_vae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
+                # use VAE for initial epochs to ensure stable recon first
             wandb.log({"train/beta": betas[epoch]})
         elif args.model == 'VAE':
             train_iter = train_utils.train_epoch_vae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp, betas[epoch])
