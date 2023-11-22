@@ -1,5 +1,5 @@
 import argparse
-import os, glob
+import os, glob, gc
 from models import Autoencoder, AutoencoderKL, GaussAutoencoderKL, VQVAE
 import torch
 from torch.optim.lr_scheduler import LambdaLR
@@ -12,21 +12,22 @@ import atexit
 import logging
 logging.getLogger("monai").setLevel(logging.ERROR)
 
-def finish_wandb():
+def finish_process():
   """
   function to finish wandb if there is an error in the code or force stop
   """
   print("Closing wandb.. ")
   wandb.finish()
-  import torch, gc
+  print("Wandb closed")
+  print("Cleaning memory.. ")
   gc.collect()
   torch.cuda.empty_cache()
-  print("Wandb closed")
+  print("Memory cleaned")
 
 if __name__ =='__main__':
     
     # if there is an error execute this function
-    atexit.register(finish_wandb)
+    atexit.register(finish_process)
 
 
     parser = argparse.ArgumentParser(argparse.ArgumentDefaultsHelpFormatter)
@@ -282,14 +283,4 @@ if __name__ =='__main__':
                         "metric": Metric(metric_best).state_dict()
                     },
                     os.path.join(args.root, args.name,'checkpoint_best.pt'))
-            torch.save(
-            {
-                "net": model.state_dict(),
-                "opt": opt.state_dict(),
-                "lr": lr_scheduler.state_dict(),
-                "wandb": WandBID(wandb.run.id).state_dict(),
-                "epoch": Epoch(epoch).state_dict(),
-                "metric": Metric(metric_best).state_dict()
-            },
-            os.path.join(args.root, args.name,'checkpoint_val.pt'))
-    finish_wandb()
+    finish_process()
