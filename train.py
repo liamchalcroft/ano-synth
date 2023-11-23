@@ -1,5 +1,5 @@
 import argparse
-import os, glob
+import os, glob, gc
 from models import Autoencoder, AutoencoderKL, GaussAutoencoderKL, VQVAE
 import torch
 from torch.optim.lr_scheduler import LambdaLR
@@ -12,18 +12,22 @@ import atexit
 import logging
 logging.getLogger("monai").setLevel(logging.ERROR)
 
-def finish_wandb():
+def finish_process():
   """
   function to finish wandb if there is an error in the code or force stop
   """
   print("Closing wandb.. ")
   wandb.finish()
   print("Wandb closed")
+  print("Cleaning memory.. ")
+  gc.collect()
+  torch.cuda.empty_cache()
+  print("Memory cleaned")
 
 if __name__ =='__main__':
     
     # if there is an error execute this function
-    atexit.register(finish_wandb)
+    atexit.register(finish_process)
 
 
     parser = argparse.ArgumentParser(argparse.ArgumentDefaultsHelpFormatter)
@@ -130,6 +134,7 @@ if __name__ =='__main__':
 
     if args.resume or args.resume_best:
         ckpts = glob.glob(os.path.join(args.root, args.name, 'checkpoint.pt' if args.resume else 'checkpoint_best.pt'))
+        print("ckpts:",ckpts)
         if len(ckpts) == 0:
             args.resume = False
             print('\nNo checkpoints found. Beginning from epoch #0')
@@ -237,7 +242,16 @@ if __name__ =='__main__':
             train_iter = train_utils.train_epoch_vqvae(train_iter, args.epoch_length, train_loader, opt, model, epoch, device, args.amp)
         wandb.log({"train/learning_rate": lr_scheduler.get_lr()[0]})
         lr_scheduler.step()
-
+        torch.save(
+            {
+                "net": model.state_dict(),
+                "opt": opt.state_dict(),
+                "lr": lr_scheduler.state_dict(),
+                "wandb": WandBID(wandb.run.id).state_dict(),
+                "epoch": Epoch(epoch).state_dict(),
+                "metric": Metric(metric_best).state_dict()
+            },
+            os.path.join(args.root, args.name,'checkpoint.pt'))        
         if (epoch + 1) % args.val_interval == 0:
             model.eval()
             if args.model == 'AE':
@@ -265,15 +279,5 @@ if __name__ =='__main__':
                         "epoch": Epoch(epoch).state_dict(),
                         "metric": Metric(metric_best).state_dict()
                     },
-                    os.path.join(args.root, args.name,'checkpoint_best.pt'.format(epoch)))
-            torch.save(
-                {
-                    "net": model.state_dict(),
-                    "opt": opt.state_dict(),
-                    "lr": lr_scheduler.state_dict(),
-                    "wandb": WandBID(wandb.run.id).state_dict(),
-                    "epoch": Epoch(epoch).state_dict(),
-                    "metric": Metric(metric_best).state_dict()
-                },
-                os.path.join(args.root, args.name,'checkpoint.pt'.format(epoch)))
-    finish_wandb()
+                    os.path.join(args.root, args.name,'checkpoint_best.pt'))
+    finish_process()
