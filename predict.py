@@ -164,7 +164,11 @@ if __name__ =='__main__':
             "l2": float(l2(reconstruction, img)),
             "ssim": float(ssim(reconstruction, img))
         })
-        anomaly = (reconstruction - img)**2
+        if args.model=="GaussVAE":
+            logvars = recon_sigma.pow(2).log()
+            anomaly = torch.sigmoid((reconstruction - img).pow(2)/(2*torch.exp(logvars)) - np.log(2*np.pi)/2 - logvars/2)
+        else:
+            anomaly = (reconstruction - img)**2
 
         reconstruction = reconstruction[0]
         anomaly = anomaly[0]
