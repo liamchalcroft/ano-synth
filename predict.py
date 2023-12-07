@@ -126,7 +126,7 @@ if __name__ =='__main__':
 
     recon_scores = []
 
-    for item in tqdm.tqdm(img_list, total=len(img_list)):
+    for i,item in tqdm.tqdm(enumerate(img_list), total=len(img_list)):
         image = nb.load(item["image"]) # nibabel image
         unmodified_item = {"image": image.get_fdata()[None], "fname": item["fname"]}
         item = transforms(unmodified_item)
@@ -164,7 +164,11 @@ if __name__ =='__main__':
             "l2": float(l2(reconstruction, img)),
             "ssim": float(ssim(reconstruction, img))
         })
-        anomaly = (reconstruction - img)**2
+        if args.model=="GaussVAE":
+            logvars = recon_sigma.pow(2).log()
+            anomaly = torch.sigmoid((reconstruction - img).pow(2)/(2*torch.exp(logvars)) - np.log(2*np.pi)/2 - logvars/2)
+        else:
+            anomaly = (reconstruction - img)**2
 
         reconstruction = reconstruction[0]
         anomaly = anomaly[0]
@@ -189,10 +193,11 @@ if __name__ =='__main__':
         reconstruction *= np.percentile(img, 99.5)
         reconstruction = reconstruction.astype(img.dtype)
 
-        nb.save(nb.Nifti1Image(reconstruction[0], image.affine, image.header), 
-                os.path.join(odir, fname+".nii.gz"))
-        nb.save(nb.Nifti1Image(anomaly[0], image.affine, image.header), 
-                os.path.join(odir, "ANOMALY_"+fname+".nii.gz"))
+        if i<=5:
+            nb.save(nb.Nifti1Image(reconstruction[0], image.affine, image.header), 
+                    os.path.join(odir, fname+".nii.gz"))
+            nb.save(nb.Nifti1Image(anomaly[0], image.affine, image.header), 
+                    os.path.join(odir, "ANOMALY_"+fname+".nii.gz"))
 
     myFile = open(os.path.join(odir, 'scores.csv'), 'w')
     writer = csv.writer(myFile)
