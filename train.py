@@ -44,6 +44,7 @@ if __name__ =='__main__':
     parser.add_argument("--beta_cycles", type=int, default=1, help="Number of beta cycles (for BetaVAE only).")
     parser.add_argument("--workers", type=int, default=0, help="Number of workers for dataloaders.")
     parser.add_argument("--mixtures", type=int, default=10, help="Number of mixtures for MOLVAE.")
+    parser.add_argument("--flat_latent", action='store_true', help="Use flat (1D) compression of latent space.")
     parser.add_argument("--synth", action='store_true', help="Use synthetic training data.")
     parser.add_argument("--mix", action='store_true', help="Use 50:50 mix of real and synthetic training data.")
     parser.add_argument("--gauss", action='store_true', help="Use different recon loss to better represent covariance.")
@@ -82,6 +83,8 @@ if __name__ =='__main__':
             attention_levels=(False,False,False,False,False,False),
             use_convtranspose=False,
             latent_channels=128,
+            flatten_latent=args.flat_latent,
+            image_size=224,
         ).to(device)
     elif args.model in ['SAMBA', 'VAE']:
         model = AutoencoderKL(
@@ -96,6 +99,8 @@ if __name__ =='__main__':
             attention_levels=(False,False,False,False,False,False),
             use_convtranspose=False,
             latent_channels=128,
+            flatten_latent=args.flat_latent,
+            image_size=224,
         ).to(device)
     elif args.model == 'GaussVAE':
         model = GaussAutoencoderKL(
@@ -110,6 +115,8 @@ if __name__ =='__main__':
             attention_levels=(False,False,False,False,False,False),
             use_convtranspose=False,
             latent_channels=128,
+            flatten_latent=args.flat_latent,
+            image_size=224,
         ).to(device)
     elif args.model == 'MOLVAE':
         model = AutoencoderKL(
@@ -124,6 +131,8 @@ if __name__ =='__main__':
             attention_levels=(False,False,False,False,False,False),
             use_convtranspose=False,
             latent_channels=128,
+            flatten_latent=args.flat_latent,
+            image_size=224,
         ).to(device)
     elif args.model == 'VQVAE':
         model = VQVAE(
