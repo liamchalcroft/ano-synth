@@ -182,12 +182,12 @@ if __name__ =='__main__':
 
         if args.label is not None:
             for threshold in np.linspace(0.1,0.9,9):
-                recon_scores["dice@{}".format(threshold)] = compute_dice((anomaly>threshold).int(),lab).sum().cpu().item()
+                recon_scores[-1]["dice@{}".format(threshold)] = compute_dice((anomaly>threshold).int(),lab).sum().cpu().item()
                 confusion = mn.metrics.get_confusion_matrix((anomaly>threshold).int(),lab)
-                recon_scores["precision@{}".format(threshold)] = compute_precision(confusion).sum().cpu().item()
-                recon_scores["precision@{}".format(threshold)] = compute_precision(confusion).sum().cpu().item()
-                recon_scores["fpr@{}".format(threshold)] = compute_fpr(confusion).sum().cpu().item()
-                recon_scores["fnr@{}".format(threshold)] = compute_fnr(confusion).sum().cpu().item()
+                recon_scores[-1]["precision@{}".format(threshold)] = compute_precision(confusion).sum().cpu().item()
+                recon_scores[-1]["precision@{}".format(threshold)] = compute_precision(confusion).sum().cpu().item()
+                recon_scores[-1]["fpr@{}".format(threshold)] = compute_fpr(confusion).sum().cpu().item()
+                recon_scores[-1]["fnr@{}".format(threshold)] = compute_fnr(confusion).sum().cpu().item()
 
         reconstruction = reconstruction[0]
         anomaly = anomaly[0]
