@@ -227,7 +227,7 @@ if __name__ =='__main__':
 
     myFile = open(os.path.join(odir, 'scores.csv'), 'w')
     writer = csv.writer(myFile)
-    writer.writerow(list(recon_scores.keys()))
+    writer.writerow(list(recon_scores[0].keys()))
     for dictionary in recon_scores:
         writer.writerow(dictionary.values())
     myFile.close()
