@@ -23,7 +23,7 @@ if __name__ =='__main__':
     parser.add_argument("--use_best", action='store_true', help="Resume from checkpoint with highest SSIM.")
     parser.add_argument("--root", type=str, default='./', help="Root dir to save output directory within.")
     parser.add_argument("--data", type=str, help="Path to target data.")
-    parser.add_argument("--labels", default=None, type=str, help="Path to target segmentation labels. Must be in same filenames as images.")
+    parser.add_argument("--label", default=None, type=str, help="Path to target segmentation labels. Must be in same filenames as images.")
     parser.add_argument("--data_name", type=str, help="Folder name to save predictions under.")
     parser.add_argument("--slice_batch_size", type=int, default=32, help="Number of slices to load as a batch at once.")
     args = parser.parse_args()
@@ -111,7 +111,7 @@ if __name__ =='__main__':
         
     img_list = glob.glob(os.path.join(args.data, "*.nii*"))
     img_list = [{"image": img, "fname": img.split('/')[-1].split('.')[0]} for img in img_list]
-    if args.labels is not None:
+    if args.label is not None:
         for img in img_list:
             img["label"] = img["image"].replace(args.data, args.label)
     print("\nTotal Images: {}".format(len(img_list)))
