@@ -119,7 +119,7 @@ if __name__ =='__main__':
     transforms = mn.transforms.Compose([
         mn.transforms.ToTensorD(keys=["image","label"], allow_missing_keys=True, device=device, dtype=torch.float32),
         mn.transforms.OrientationD(keys=["image","label"], allow_missing_keys=True, axcodes="RAS"),
-        mn.transforms.SpacingD(keys=["image","label"], allow_missing_keys=True, pixdim=(1,1,-1), mode=["bilinear"]),
+        mn.transforms.SpacingD(keys=["image","label"], allow_missing_keys=True, pixdim=(1,1,-1), mode=["bilinear","nearest"]),
         mn.transforms.ResizeD(keys=["image","label"], allow_missing_keys=True, spatial_size=(224,224,-1), mode=["bilinear","nearest"]),
         mn.transforms.AsDiscreteD(keys=["label"], allow_missing_keys=True, threshold=0.5),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
