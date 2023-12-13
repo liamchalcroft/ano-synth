@@ -27,6 +27,33 @@ def set_global_seed(seed = 42):
         torch.backends.cudnn.benchmark = False
 
 
+### metrics for test-time eval ###
+
+def compute_dice(y_pred, y, eps=1e-8):
+    y_pred = torch.flatten(y_pred)
+    y = torch.flatten(y)
+    y = y.float()
+    intersect = (y_pred * y).sum(-1)
+    denominator = (y_pred * y_pred).sum(-1) + (y * y).sum(-1)
+    return 2 * (intersect / denominator.clamp(min=eps))
+
+def compute_fpr(confusion, eps=1e-8):
+    tp,fp,tn,fn = torch.chunk(confusion,dim=-1)
+    return fp / (fp + tn + eps)
+
+def compute_fnr(confusion, eps=1e-8):
+    tp,fp,tn,fn = torch.chunk(confusion,dim=-1)
+    return fn / (fn + tp + eps)
+
+def compute_precision(confusion, eps=1e-8):
+    tp,fp,tn,fn = torch.chunk(confusion,dim=-1)
+    return tp / (tp + fp + eps)
+
+def compute_recall(confusion, eps=1e-8):
+    tp,fp,tn,fn = torch.chunk(confusion,dim=-1)
+    return tp / (tp + fn + eps)
+
+
 ### loss functions ###
 def kld(mu, log_var):
     mu = mu.reshape(mu.shape[0], mu.shape[1], -1)

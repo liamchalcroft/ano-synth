@@ -8,7 +8,7 @@ import nibabel as nb
 import tqdm
 import logging
 from contextlib import nullcontext
-from train_utils import l2, ssim, sample_from_mol
+from train_utils import l2, ssim, sample_from_mol, compute_dice, compute_fnr, compute_fpr, compute_precision, compute_recall
 logging.getLogger("monai").setLevel(logging.ERROR)
 
 if __name__ =='__main__':
@@ -23,6 +23,7 @@ if __name__ =='__main__':
     parser.add_argument("--use_best", action='store_true', help="Resume from checkpoint with highest SSIM.")
     parser.add_argument("--root", type=str, default='./', help="Root dir to save output directory within.")
     parser.add_argument("--data", type=str, help="Path to target data.")
+    parser.add_argument("--labels", default=None, type=str, help="Path to target segmentation labels. Must be in same filenames as images.")
     parser.add_argument("--data_name", type=str, help="Folder name to save predictions under.")
     parser.add_argument("--slice_batch_size", type=int, default=32, help="Number of slices to load as a batch at once.")
     args = parser.parse_args()
@@ -110,13 +111,17 @@ if __name__ =='__main__':
         
     img_list = glob.glob(os.path.join(args.data, "*.nii*"))
     img_list = [{"image": img, "fname": img.split('/')[-1].split('.')[0]} for img in img_list]
+    if args.labels is not None:
+        for img in img_list:
+            img["label"] = img["image"].replace(args.data, args.label)
     print("\nTotal Images: {}".format(len(img_list)))
 
     transforms = mn.transforms.Compose([
-        mn.transforms.ToTensorD(keys=["image"], device=device, dtype=torch.float32),
-        mn.transforms.OrientationD(keys=["image"], axcodes="RAS"),
-        mn.transforms.SpacingD(keys=["image"], pixdim=(1,1,-1), mode=["bilinear"]),
-        mn.transforms.ResizeD(keys=["image"], spatial_size=(224,224,-1), mode=["bilinear"]),
+        mn.transforms.ToTensorD(keys=["image","label"], allow_missing_keys=True, device=device, dtype=torch.float32),
+        mn.transforms.OrientationD(keys=["image","label"], allow_missing_keys=True, axcodes="RAS"),
+        mn.transforms.SpacingD(keys=["image","label"], allow_missing_keys=True, pixdim=(1,1,-1), mode=["bilinear"]),
+        mn.transforms.ResizeD(keys=["image","label"], allow_missing_keys=True, spatial_size=(224,224,-1), mode=["bilinear","nearest"]),
+        mn.transforms.AsDiscreteD(keys=["label"], allow_missing_keys=True, threshold=0.5),
         mn.transforms.ScaleIntensityRangePercentilesd(keys="image", lower=0, upper=99.5, b_min=0, b_max=1, clip=True),
     ])
 
@@ -129,9 +134,14 @@ if __name__ =='__main__':
     for i,item in tqdm.tqdm(enumerate(img_list), total=len(img_list)):
         image = nb.load(item["image"]) # nibabel image
         unmodified_item = {"image": image.get_fdata()[None], "fname": item["fname"]}
+        if args.label is not None:
+            label = nb.load(item["label"])
+            unmodified_item["label"] = label.get_fdata()[None]
         item = transforms(unmodified_item)
         fname = item["fname"]
         img = item["image"][None]
+        if args.label is not None:
+            lab = item["label"][None]
 
         with torch.no_grad():
             with ctx:
@@ -170,6 +180,15 @@ if __name__ =='__main__':
         else:
             anomaly = (reconstruction - img)**2
 
+        if args.label is not None:
+            for threshold in np.linspace(0.1,0.9,9):
+                recon_scores["dice@{}".format(threshold)] = compute_dice((anomaly>threshold).int(),lab).sum().cpu().item()
+                confusion = mn.metrics.get_confusion_matrix((anomaly>threshold).int(),lab)
+                recon_scores["precision@{}".format(threshold)] = compute_precision(confusion).sum().cpu().item()
+                recon_scores["precision@{}".format(threshold)] = compute_precision(confusion).sum().cpu().item()
+                recon_scores["fpr@{}".format(threshold)] = compute_fpr(confusion).sum().cpu().item()
+                recon_scores["fnr@{}".format(threshold)] = compute_fnr(confusion).sum().cpu().item()
+
         reconstruction = reconstruction[0]
         anomaly = anomaly[0]
 
@@ -190,6 +209,8 @@ if __name__ =='__main__':
         anomaly = inverted_pred["image"]
 
         img = unmodified_item["image"]
+        if args.label is not None:
+            lab = unmodified_item["label"]
         reconstruction *= np.percentile(img, 99.5)
         reconstruction = reconstruction.astype(img.dtype)
 
@@ -198,10 +219,15 @@ if __name__ =='__main__':
                     os.path.join(odir, fname+".nii.gz"))
             nb.save(nb.Nifti1Image(anomaly[0], image.affine, image.header), 
                     os.path.join(odir, "ANOMALY_"+fname+".nii.gz"))
+            nb.save(nb.Nifti1Image(img[0], image.affine, image.header), 
+                    os.path.join(odir, "GT_IMAGE_"+fname+".nii.gz"))
+            if args.label is not None:
+                nb.save(nb.Nifti1Image(lab[0], image.affine, image.header), 
+                        os.path.join(odir, "GT_LABEL_"+fname+".nii.gz"))
 
     myFile = open(os.path.join(odir, 'scores.csv'), 'w')
     writer = csv.writer(myFile)
-    writer.writerow(['fname', 'l2', 'ssim'])
+    writer.writerow(list(recon_scores.keys()))
     for dictionary in recon_scores:
         writer.writerow(dictionary.values())
     myFile.close()
