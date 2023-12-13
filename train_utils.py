@@ -38,19 +38,19 @@ def compute_dice(y_pred, y, eps=1e-8):
     return 2 * (intersect / denominator.clamp(min=eps))
 
 def compute_fpr(confusion, eps=1e-8):
-    tp,fp,tn,fn = torch.chunk(confusion,dim=-1)
+    tp,fp,tn,fn = torch.chunk(confusion,dim=-1,chunks=4)
     return fp / (fp + tn + eps)
 
 def compute_fnr(confusion, eps=1e-8):
-    tp,fp,tn,fn = torch.chunk(confusion,dim=-1)
+    tp,fp,tn,fn = torch.chunk(confusion,dim=-1,chunks=4)
     return fn / (fn + tp + eps)
 
 def compute_precision(confusion, eps=1e-8):
-    tp,fp,tn,fn = torch.chunk(confusion,dim=-1)
+    tp,fp,tn,fn = torch.chunk(confusion,dim=-1,chunks=4)
     return tp / (tp + fp + eps)
 
 def compute_recall(confusion, eps=1e-8):
-    tp,fp,tn,fn = torch.chunk(confusion,dim=-1)
+    tp,fp,tn,fn = torch.chunk(confusion,dim=-1,chunks=4)
     return tp / (tp + fn + eps)
 
 
