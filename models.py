@@ -1426,7 +1426,7 @@ class AutoencoderKL(nn.Module):
         """
         z = self.post_quant(z)
         if self.flatten_latent:
-            h = h.view(h.size(0),self.latent_channels,*self.image_min_size)
+            z = z.view(z.size(0),self.latent_channels,*self.image_min_size)
         if self.use_checkpointing:
             dec = torch.utils.checkpoint.checkpoint(self.decoder, z, use_reentrant=False)
         else:
@@ -1621,7 +1621,7 @@ class Autoencoder(nn.Module):
         """
         z = self.post_quant(z)
         if self.flatten_latent:
-            h = h.view(h.size(0),self.latent_channels,*self.image_min_size)
+            z = z.view(z.size(0),self.latent_channels,*self.image_min_size)
         if self.use_checkpointing:
             dec = torch.utils.checkpoint.checkpoint(self.decoder, z, use_reentrant=False)
         else:
@@ -1864,7 +1864,7 @@ class GaussAutoencoderKL(nn.Module):
         """
         z = self.post_quant(z)
         if self.flatten_latent:
-            h = h.view(h.size(0),self.latent_channels,*self.image_min_size)
+            z = z.view(z.size(0),self.latent_channels,*self.image_min_size)
         if self.use_checkpointing:
             dec_mu = torch.utils.checkpoint.checkpoint(self.decoder_mu, z, use_reentrant=False)
             dec_log_sigma = torch.utils.checkpoint.checkpoint(self.decoder_log_sigma, z, use_reentrant=False)
