@@ -1258,6 +1258,8 @@ class AutoencoderKL(nn.Module):
         use_flash_attention: bool = False,
         use_checkpointing: bool = False,
         use_convtranspose: bool = False,
+        image_size: Sequence[int] | int = None,
+        flatten_latent: bool = False,
     ) -> None:
         super().__init__()
 
@@ -1271,6 +1273,9 @@ class AutoencoderKL(nn.Module):
         if isinstance(num_res_blocks, int):
             num_res_blocks = ensure_tuple_rep(num_res_blocks, len(num_channels))
 
+        if isinstance(image_size, int):
+            image_size = ensure_tuple_rep(image_size, spatial_dims)
+
         if len(num_res_blocks) != len(num_channels):
             raise ValueError(
                 "`num_res_blocks` should be a single integer or a tuple of integers with the same length as "
@@ -1282,11 +1287,16 @@ class AutoencoderKL(nn.Module):
                 "torch.cuda.is_available() should be True but is False. Flash attention is only available for GPU."
             )
 
+        if flatten_latent is True and image_size is None:
+            raise ValueError(
+                "If using flatten_latent, must provide fixed input image size to calculate flat dims."
+            )
+
         self.encoder = Encoder(
             spatial_dims=spatial_dims,
             in_channels=in_channels,
-            num_channels=num_channels,
-            out_channels=latent_channels,
+            num_channels=num_channels[:-1],
+            out_channels=num_channels[-1],
             num_res_blocks=num_res_blocks,
             norm_num_groups=norm_num_groups,
             norm_eps=norm_eps,
@@ -1296,8 +1306,8 @@ class AutoencoderKL(nn.Module):
         )
         self.decoder = Decoder(
             spatial_dims=spatial_dims,
-            num_channels=num_channels,
-            in_channels=latent_channels,
+            num_channels=num_channels[:-1],
+            in_channels=num_channels[-1],
             out_channels=out_channels,
             num_res_blocks=num_res_blocks,
             norm_num_groups=norm_num_groups,
@@ -1307,28 +1317,43 @@ class AutoencoderKL(nn.Module):
             use_flash_attention=use_flash_attention,
             use_convtranspose=use_convtranspose,
         )
-        self.quant_conv_mu = Convolution(
+        self.flatten_latent = flatten_latent
+        if flatten_latent:
+            with torch.no_grad():
+                image_min_size = self.encoder(torch.zeros(1,in_channels,*image_size)).shape[1:]
+            self.image_min_size = image_min_size
+
+        self.quant_mu = torch.nn.Linear(
+            math.prod(image_min_size),
+            latent_channels
+        ) if flatten_latent else Convolution(
             spatial_dims=spatial_dims,
-            in_channels=latent_channels,
+            in_channels=image_min_size[0],
             out_channels=latent_channels,
             strides=1,
             kernel_size=1,
             padding=0,
             conv_only=True,
         )
-        self.quant_conv_log_sigma = Convolution(
+        self.quant_log_sigma = torch.nn.Linear(
+            math.prod(image_min_size),
+            latent_channels
+        ) if flatten_latent else Convolution(
             spatial_dims=spatial_dims,
-            in_channels=latent_channels,
+            in_channels=image_min_size[0],
             out_channels=latent_channels,
             strides=1,
             kernel_size=1,
             padding=0,
             conv_only=True,
         )
-        self.post_quant_conv = Convolution(
+        self.post_quant = torch.nn.Linear(
+            latent_channels,
+            math.prod(image_min_size)
+        ) if flatten_latent else Convolution(
             spatial_dims=spatial_dims,
             in_channels=latent_channels,
-            out_channels=latent_channels,
+            out_channels=image_min_size[0],
             strides=1,
             kernel_size=1,
             padding=0,
@@ -1349,9 +1374,10 @@ class AutoencoderKL(nn.Module):
             h = torch.utils.checkpoint.checkpoint(self.encoder, x, use_reentrant=False)
         else:
             h = self.encoder(x)
-
-        z_mu = self.quant_conv_mu(h)
-        z_log_var = self.quant_conv_log_sigma(h)
+        if self.flatten_latent:
+            h = h.view(h.size(0),-1)
+        z_mu = self.quant_mu(h)
+        z_log_var = self.quant_log_sigma(h)
         z_log_var = torch.clamp(z_log_var, -10.0, 1.0)
         z_sigma = torch.exp(z_log_var / 2)
 
@@ -1398,7 +1424,9 @@ class AutoencoderKL(nn.Module):
         Returns:
             decoded image tensor
         """
-        z = self.post_quant_conv(z)
+        z = self.post_quant(z)
+        if self.flatten_latent:
+            z = z.view(z.size(0),*self.image_min_size)
         if self.use_checkpointing:
             dec = torch.utils.checkpoint.checkpoint(self.decoder, z, use_reentrant=False)
         else:
@@ -1458,6 +1486,8 @@ class Autoencoder(nn.Module):
         use_flash_attention: bool = False,
         use_checkpointing: bool = False,
         use_convtranspose: bool = False,
+        image_size: Sequence[int] | int = None,
+        flatten_latent: bool = False,
     ) -> None:
         super().__init__()
 
@@ -1471,6 +1501,9 @@ class Autoencoder(nn.Module):
         if isinstance(num_res_blocks, int):
             num_res_blocks = ensure_tuple_rep(num_res_blocks, len(num_channels))
 
+        if isinstance(image_size, int):
+            image_size = ensure_tuple_rep(image_size, spatial_dims)
+
         if len(num_res_blocks) != len(num_channels):
             raise ValueError(
                 "`num_res_blocks` should be a single integer or a tuple of integers with the same length as "
@@ -1482,11 +1515,16 @@ class Autoencoder(nn.Module):
                 "torch.cuda.is_available() should be True but is False. Flash attention is only available for GPU."
             )
 
+        if flatten_latent is True and image_size is None:
+            raise ValueError(
+                "If using flatten_latent, must provide fixed input image size to calculate flat dims."
+            )
+
         self.encoder = Encoder(
             spatial_dims=spatial_dims,
             in_channels=in_channels,
-            num_channels=num_channels,
-            out_channels=latent_channels,
+            num_channels=num_channels[:-1],
+            out_channels=num_channels[-1],
             num_res_blocks=num_res_blocks,
             norm_num_groups=norm_num_groups,
             norm_eps=norm_eps,
@@ -1496,8 +1534,8 @@ class Autoencoder(nn.Module):
         )
         self.decoder = Decoder(
             spatial_dims=spatial_dims,
-            num_channels=num_channels,
-            in_channels=latent_channels,
+            num_channels=num_channels[:-1],
+            in_channels=num_channels[-1],
             out_channels=out_channels,
             num_res_blocks=num_res_blocks,
             norm_num_groups=norm_num_groups,
@@ -1507,19 +1545,31 @@ class Autoencoder(nn.Module):
             use_flash_attention=use_flash_attention,
             use_convtranspose=use_convtranspose,
         )
-        self.quant_conv = Convolution(
+        self.flatten_latent = flatten_latent
+        if flatten_latent:
+            with torch.no_grad():
+                image_min_size = self.encoder(torch.zeros(1,in_channels,*image_size)).shape[1:]
+            self.image_min_size = image_min_size
+
+        self.quant = torch.nn.Linear(
+            math.prod(image_min_size),
+            latent_channels
+        ) if flatten_latent else Convolution(
             spatial_dims=spatial_dims,
-            in_channels=latent_channels,
+            in_channels=image_min_size[0],
             out_channels=latent_channels,
             strides=1,
             kernel_size=1,
             padding=0,
             conv_only=True,
         )
-        self.post_quant_conv = Convolution(
+        self.post_quant = torch.nn.Linear(
+            latent_channels,
+            math.prod(image_min_size)
+        ) if flatten_latent else Convolution(
             spatial_dims=spatial_dims,
             in_channels=latent_channels,
-            out_channels=latent_channels,
+            out_channels=image_min_size[0],
             strides=1,
             kernel_size=1,
             padding=0,
@@ -1540,9 +1590,9 @@ class Autoencoder(nn.Module):
             h = torch.utils.checkpoint.checkpoint(self.encoder, x, use_reentrant=False)
         else:
             h = self.encoder(x)
-
-        z = self.quant_conv(h)
-
+        if self.flatten_latent:
+            h = h.view(h.size(0),-1)
+        z = self.quant(h)
         return z
 
     def reconstruct(self, x: torch.Tensor) -> torch.Tensor:
@@ -1569,7 +1619,9 @@ class Autoencoder(nn.Module):
         Returns:
             decoded image tensor
         """
-        z = self.post_quant_conv(z)
+        z = self.post_quant(z)
+        if self.flatten_latent:
+            z = z.view(z.size(0),*self.image_min_size)
         if self.use_checkpointing:
             dec = torch.utils.checkpoint.checkpoint(self.decoder, z, use_reentrant=False)
         else:
@@ -1629,6 +1681,8 @@ class GaussAutoencoderKL(nn.Module):
         use_flash_attention: bool = False,
         use_checkpointing: bool = False,
         use_convtranspose: bool = False,
+        image_size: Sequence[int] | int = None,
+        flatten_latent: bool = False,
     ) -> None:
         super().__init__()
 
@@ -1642,6 +1696,9 @@ class GaussAutoencoderKL(nn.Module):
         if isinstance(num_res_blocks, int):
             num_res_blocks = ensure_tuple_rep(num_res_blocks, len(num_channels))
 
+        if isinstance(image_size, int):
+            image_size = ensure_tuple_rep(image_size, spatial_dims)
+
         if len(num_res_blocks) != len(num_channels):
             raise ValueError(
                 "`num_res_blocks` should be a single integer or a tuple of integers with the same length as "
@@ -1653,11 +1710,16 @@ class GaussAutoencoderKL(nn.Module):
                 "torch.cuda.is_available() should be True but is False. Flash attention is only available for GPU."
             )
 
+        if flatten_latent is True and image_size is None:
+            raise ValueError(
+                "If using flatten_latent, must provide fixed input image size to calculate flat dims."
+            )
+
         self.encoder = Encoder(
             spatial_dims=spatial_dims,
             in_channels=in_channels,
-            num_channels=num_channels,
-            out_channels=latent_channels,
+            num_channels=num_channels[:-1],
+            out_channels=num_channels[-1],
             num_res_blocks=num_res_blocks,
             norm_num_groups=norm_num_groups,
             norm_eps=norm_eps,
@@ -1667,8 +1729,8 @@ class GaussAutoencoderKL(nn.Module):
         )
         self.decoder_mu = Decoder(
             spatial_dims=spatial_dims,
-            num_channels=num_channels,
-            in_channels=latent_channels,
+            num_channels=num_channels[:-1],
+            in_channels=num_channels[-1],
             out_channels=out_channels,
             num_res_blocks=num_res_blocks,
             norm_num_groups=norm_num_groups,
@@ -1680,8 +1742,8 @@ class GaussAutoencoderKL(nn.Module):
         )
         self.decoder_log_sigma = Decoder(
             spatial_dims=spatial_dims,
-            num_channels=num_channels,
-            in_channels=latent_channels,
+            num_channels=num_channels[:-1],
+            in_channels=num_channels[-1],
             out_channels=out_channels,
             num_res_blocks=num_res_blocks,
             norm_num_groups=norm_num_groups,
@@ -1691,28 +1753,43 @@ class GaussAutoencoderKL(nn.Module):
             use_flash_attention=use_flash_attention,
             use_convtranspose=use_convtranspose,
         )
-        self.quant_conv_mu = Convolution(
+        self.flatten_latent = flatten_latent
+        if flatten_latent:
+            with torch.no_grad():
+                image_min_size = self.encoder(torch.zeros(1,in_channels,*image_size)).shape[1:]
+            self.image_min_size = image_min_size
+
+        self.quant_mu = torch.nn.Linear(
+            math.prod(image_min_size),
+            latent_channels
+        ) if flatten_latent else Convolution(
             spatial_dims=spatial_dims,
-            in_channels=latent_channels,
+            in_channels=image_min_size[0],
             out_channels=latent_channels,
             strides=1,
             kernel_size=1,
             padding=0,
             conv_only=True,
         )
-        self.quant_conv_log_sigma = Convolution(
+        self.quant_log_sigma = torch.nn.Linear(
+            math.prod(image_min_size),
+            latent_channels
+        ) if flatten_latent else Convolution(
             spatial_dims=spatial_dims,
-            in_channels=latent_channels,
+            in_channels=image_min_size[0],
             out_channels=latent_channels,
             strides=1,
             kernel_size=1,
             padding=0,
             conv_only=True,
         )
-        self.post_quant_conv = Convolution(
+        self.post_quant = torch.nn.Linear(
+            latent_channels,
+            math.prod(image_min_size)
+        ) if flatten_latent else Convolution(
             spatial_dims=spatial_dims,
             in_channels=latent_channels,
-            out_channels=latent_channels,
+            out_channels=image_min_size[0],
             strides=1,
             kernel_size=1,
             padding=0,
@@ -1733,9 +1810,10 @@ class GaussAutoencoderKL(nn.Module):
             h = torch.utils.checkpoint.checkpoint(self.encoder, x, use_reentrant=False)
         else:
             h = self.encoder(x)
-
-        z_mu = self.quant_conv_mu(h)
-        z_log_var = self.quant_conv_log_sigma(h)
+        if self.flatten_latent:
+            h = h.view(h.size(0),-1)
+        z_mu = self.quant_mu(h)
+        z_log_var = self.quant_log_sigma(h)
         z_log_var = torch.clamp(z_log_var, -10.0, 1.0)
         z_sigma = torch.exp(z_log_var / 2)
 
@@ -1784,7 +1862,9 @@ class GaussAutoencoderKL(nn.Module):
         Returns:
             decoded image tensor
         """
-        z = self.post_quant_conv(z)
+        z = self.post_quant(z)
+        if self.flatten_latent:
+            z = z.view(z.size(0),*self.image_min_size)
         if self.use_checkpointing:
             dec_mu = torch.utils.checkpoint.checkpoint(self.decoder_mu, z, use_reentrant=False)
             dec_log_sigma = torch.utils.checkpoint.checkpoint(self.decoder_log_sigma, z, use_reentrant=False)
