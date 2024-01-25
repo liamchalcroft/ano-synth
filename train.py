@@ -34,11 +34,11 @@ if __name__ =='__main__':
     parser.add_argument("--name", type=str, help="Name of WandB run.")
     parser.add_argument("--model", type=str, help="Model to use.",
                         choices=["AE", "RAE", "SAMBA", "VAE", "GaussVAE", "MOLVAE", "VQVAE"])
-    parser.add_argument("--epochs", type=int, default=1000, help="Number of epochs for training.")
+    parser.add_argument("--epochs", type=int, default=2000, help="Number of epochs for training.")
     parser.add_argument("--epoch_length", type=int, default=200, help="Number of iterations per epoch.")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate.")
     parser.add_argument("--val_interval", type=int, default=50, help="Validation interval.")
-    parser.add_argument("--batch_size", type=int, default=32, help="Batch size.")
+    parser.add_argument("--batch_size", type=int, default=8, help="Batch size.")
     parser.add_argument("--beta_init", type=float, default=0, help="Initial beta (for BetaVAE only).")
     parser.add_argument("--beta_final", type=float, default=0.01, help="Final beta (for BetaVAE only).")
     parser.add_argument("--beta_cycles", type=int, default=1, help="Number of beta cycles (for BetaVAE only).")
