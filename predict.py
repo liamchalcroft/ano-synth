@@ -197,7 +197,7 @@ if __name__ =='__main__':
                 recon_scores[-1]["dice@{}".format(threshold)] = compute_dice((anomaly>threshold).int(),lab).sum().cpu().item()
                 confusion = mn.metrics.get_confusion_matrix((anomaly>threshold).int(),lab)
                 recon_scores[-1]["precision@{}".format(threshold)] = compute_precision(confusion).sum().cpu().item()
-                recon_scores[-1]["precision@{}".format(threshold)] = compute_precision(confusion).sum().cpu().item()
+                recon_scores[-1]["recall@{}".format(threshold)] = compute_recall(confusion).sum().cpu().item()
                 recon_scores[-1]["fpr@{}".format(threshold)] = compute_fpr(confusion).sum().cpu().item()
                 recon_scores[-1]["fnr@{}".format(threshold)] = compute_fnr(confusion).sum().cpu().item()
 
