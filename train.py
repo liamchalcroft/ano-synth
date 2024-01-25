@@ -16,6 +16,8 @@ def finish_process():
   """
   function to finish wandb if there is an error in the code or force stop
   """
+  wandb.save(os.path.join(args.root, args.name,'checkpoint.pt'))
+  wandb.save(os.path.join(args.root, args.name,'checkpoint_best.pt'))
   print("Closing wandb.. ")
   wandb.finish()
   print("Wandb closed")
@@ -265,7 +267,6 @@ if __name__ =='__main__':
                 "metric": Metric(metric_best).state_dict()
             },
             os.path.join(args.root, args.name,'checkpoint.pt'))
-        wandb.save(os.path.join(args.root, args.name,'checkpoint.pt'))
         if (epoch + 1) % args.val_interval == 0:
             model.eval()
             if args.model == 'AE':
@@ -294,5 +295,4 @@ if __name__ =='__main__':
                         "metric": Metric(metric_best).state_dict()
                     },
                     os.path.join(args.root, args.name,'checkpoint_best.pt'))
-                wandb.save(os.path.join(args.root, args.name,'checkpoint_best.pt'))
     finish_process()
