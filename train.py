@@ -298,6 +298,7 @@ if __name__ =='__main__':
     artifact = wandb.Artifact('model', type='model')
     artifact.add_file(os.path.join(args.root, args.name,'checkpoint.pt'))
     run.log_artifact(artifact)
+    artifact = wandb.Artifact('model', type='model')
     artifact.add_file(os.path.join(args.root, args.name,'checkpoint_best.pt'))
     run.log_artifact(artifact)
 
