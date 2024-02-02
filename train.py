@@ -16,8 +16,6 @@ def finish_process():
   """
   function to finish wandb if there is an error in the code or force stop
   """
-  wandb.save(os.path.join(args.root, args.name,'checkpoint.pt'))
-  wandb.save(os.path.join(args.root, args.name,'checkpoint_best.pt'))
   print("Closing wandb.. ")
   wandb.finish()
   print("Wandb closed")
@@ -158,7 +156,7 @@ if __name__ =='__main__':
             print('\nResuming from epoch #{} with WandB ID {}'.format(checkpoint['epoch'], checkpoint["wandb"]))
     print()
 
-    wandb.init(
+    run = wandb.init(
         project="ano-synth",#ano-synth #ano-synth-2
         entity="ff2023",#ff2023 #ml_projects
         save_code=True,
@@ -295,4 +293,14 @@ if __name__ =='__main__':
                         "metric": Metric(metric_best).state_dict()
                     },
                     os.path.join(args.root, args.name,'checkpoint_best.pt'))
+
+    print("Sending best model artifact..")
+    artifact = wandb.Artifact('model', type='model')
+    artifact.add_file(os.path.join(args.root, args.name,'checkpoint.pt'))
+    run.log_artifact(artifact)
+    artifact = wandb.Artifact('model', type='model')
+    artifact.add_file(os.path.join(args.root, args.name,'checkpoint_best.pt'))
+    run.log_artifact(artifact)
+
+
     finish_process()
