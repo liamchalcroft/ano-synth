@@ -169,10 +169,14 @@ if __name__ =='__main__':
                     reconstruction = inferer(z_mu, model.decode)
                     reconstruction = torch.sigmoid(reconstruction)
                 elif args.model=="VAE":
-                    reconstruction, z_mu, z_sigma = inferer(img, model)
+                    z_mu, z_sigma = inferer(img, model.encode)
+                    reconstruction = inferer(z_mu, model.decode)
+                    # reconstruction, z_mu, z_sigma = inferer(img, model)
                     reconstruction = torch.sigmoid(reconstruction)
                 elif args.model=="GaussVAE":
-                    reconstruction, recon_sigma, z_mu, z_sigma = inferer(img, model)
+                    z_mu, z_sigma = inferer(img, model.encode)
+                    reconstruction, recon_sigma = inferer(z_mu, model.decode)
+                    # reconstruction, recon_sigma, z_mu, z_sigma = inferer(img, model)
                     reconstruction = torch.sigmoid(reconstruction)
                 elif args.model=="MOLVAE":
                     reconstruction, z_mu, z_sigma = inferer(img, model)
