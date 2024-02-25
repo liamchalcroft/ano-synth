@@ -159,7 +159,7 @@ if __name__ =='__main__':
                 output = torch.movedim(output, 0, -1)
             return output
         
-        inferer = SliceInferer(sw_batch_size=args.slice_batch_size)
+    inferer = SliceInferer(sw_batch_size=args.slice_batch_size)
 
     recon_scores = []
 
