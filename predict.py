@@ -209,14 +209,14 @@ if __name__ =='__main__':
 
         recon_scores.append({
             "fname": fname, 
-            "l2": float(l2(reconstruction, img)),
-            "ssim": float(ssim(reconstruction, img))
+            "l2": float(l2(reconstruction.float(), img.float())),
+            "ssim": float(ssim(reconstruction.float(), img.float()))
         })
         if args.model=="GaussVAE":
             logvars = recon_sigma.pow(2).log()
-            anomaly = torch.sigmoid((reconstruction - img).pow(2)/(2*torch.exp(logvars)) - np.log(2*np.pi)/2 - logvars/2)
+            anomaly = torch.sigmoid((reconstruction.float() - img.float()).pow(2)/(2*torch.exp(logvars.float())) - np.log(2*np.pi)/2 - logvars.float()/2)
         else:
-            anomaly = (reconstruction - img)**2
+            anomaly = (reconstruction.float() - img.float())**2
 
         if args.label is not None:
             for threshold in np.linspace(0.1,0.9,9):
