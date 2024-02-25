@@ -139,7 +139,27 @@ if __name__ =='__main__':
 
     ctx = torch.autocast("cuda" if torch.cuda.is_available() else "cpu") if args.amp else nullcontext()
 
-    inferer = mn.inferers.SliceInferer(roi_size=(224,224), spatial_dim=2, sw_batch_size=args.slice_batch_size)
+    # inferer = mn.inferers.SliceInferer(roi_size=(224,224), spatial_dim=2, sw_batch_size=args.slice_batch_size)
+
+    class SliceInferer(torch.nn.Module):
+        def __init__(self, sw_batch_size=1):
+            super().__init__()
+            self.sw_batch_size = sw_batch_size
+        def forward(self, x, model): # we know the data settings here so can just use a hacky implementation ourselves
+            x = x[0] # remove batch dim as its always 1 here
+            spatial_shape = x.shape[1:]
+            x = torch.movedim(x, -1, 0) # move z axis to batch dim
+            x = torch.split(x, self.sw_batch_size, dim=0) # split along z axis
+            output = [model(x_i) for x_i in x] # run model on each split
+            if isinstance(output[0], (tuple, list)):
+                output = [torch.cat(o, dim=0) for o in zip(*output)]
+                output = [torch.movedim(o, 0, -1) for o in output]
+            else:
+                output = torch.cat(output, dim=0)
+                output = torch.movedim(output, 0, -1)
+            return output
+        
+        inferer = SliceInferer(sw_batch_size=args.slice_batch_size)
 
     recon_scores = []
 
