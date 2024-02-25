@@ -154,9 +154,11 @@ if __name__ =='__main__':
             if isinstance(output[0], (tuple, list)):
                 output = [torch.cat(o, dim=0) for o in zip(*output)]
                 output = [torch.movedim(o, 0, -1) for o in output]
+                output = [o[None] for o in output]
             else:
                 output = torch.cat(output, dim=0)
                 output = torch.movedim(output, 0, -1)
+                output = output[None]
             return output
         
     inferer = SliceInferer(sw_batch_size=args.slice_batch_size)
@@ -189,14 +191,14 @@ if __name__ =='__main__':
                     reconstruction = inferer(z_mu, model.decode)
                     reconstruction = torch.sigmoid(reconstruction)
                 elif args.model=="VAE":
-                    z_mu, z_sigma = inferer(img, model.encode)
-                    reconstruction = inferer(z_mu, model.decode)
-                    # reconstruction, z_mu, z_sigma = inferer(img, model)
+                    # z_mu, z_sigma = inferer(img, model.encode)
+                    # reconstruction = inferer(z_mu, model.decode)
+                    reconstruction, z_mu, z_sigma = inferer(img, model)
                     reconstruction = torch.sigmoid(reconstruction)
                 elif args.model=="GaussVAE":
-                    z_mu, z_sigma = inferer(img, model.encode)
-                    reconstruction, recon_sigma = inferer(z_mu, model.decode)
-                    # reconstruction, recon_sigma, z_mu, z_sigma = inferer(img, model)
+                    # z_mu, z_sigma = inferer(img, model.encode)
+                    # reconstruction, recon_sigma = inferer(z_mu, model.decode)
+                    reconstruction, recon_sigma, z_mu, z_sigma = inferer(img, model)
                     reconstruction = torch.sigmoid(reconstruction)
                 elif args.model=="MOLVAE":
                     reconstruction, z_mu, z_sigma = inferer(img, model)
