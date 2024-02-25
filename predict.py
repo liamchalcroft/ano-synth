@@ -121,7 +121,7 @@ if __name__ =='__main__':
     model.load_state_dict(ckpt["net"], strict=False)
     model.eval()
         
-    img_list = glob.glob(os.path.join(args.data, "*.nii*"))
+    img_list = sorted(glob.glob(os.path.join(args.data, "*.nii*")))
     img_list = [{"image": img, "fname": img.split('/')[-1].split('.')[0]} for img in img_list]
     if args.label is not None:
         for img in img_list:
